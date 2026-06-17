@@ -317,7 +317,7 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
   </div>);
 }
 function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
-  const sigP=sig&&sel.espn_id?sig.players[String(sel.espn_id)]:null;
+  const sigP=sig&&sel&&sel.espn_id?sig.players[String(sel.espn_id)]:null;
   const sigMeta=sig&&sig.meta;
   if(!sel) return (
     <div className="panel pad" style={{marginTop:12,textAlign:"center",padding:"42px 16px"}}>
