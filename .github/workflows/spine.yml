@@ -1,0 +1,31 @@
+name: spine
+
+on:
+  schedule:
+    - cron: "0 9 * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: install
+        run: pip install -r spine/requirements.txt
+      - name: snapshot values
+        run: python spine/snapshot.py
+      - name: run spine
+        run: python spine/run.py
+      - name: commit outputs
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data
+          git diff --cached --quiet || git commit -m "spine: nightly data $(date -u +%F)"
+          git push
