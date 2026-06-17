@@ -21,7 +21,7 @@
     },
     "trade_solve_selftest": {
       "spearman": 0.9980832002222375,
-      "median_abs_pct_err": 4.546376145016296,
+      "median_abs_pct_err": 4.5463761450163025,
       "n_solved": 120
     },
     "note": "join to Sleeper via players[].espn_id == espn_id"
