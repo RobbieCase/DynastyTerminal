@@ -105,6 +105,8 @@ function ageMult(pos,a){
 const fmt=n=>n==null?"—":Math.round(n).toLocaleString();
 function norm(s){return (s||"").toLowerCase().replace(/[.'’`]/g,"").replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim();}
 function fcVal(byId,byName,p){if(!byId||!p)return null;if(byId[p.player_id])return byId[p.player_id];if(byName){const o=byName[norm(p.full_name)];if(o)return o;}return null;}
+function findSleeper(players,name,pos){if(!players)return null;const n=norm(name);for(const id in players){const p=players[id];if(p.position===pos&&p.full_name&&norm(p.full_name)===n)return p;}return null;}
+const USAGE_ROWS={QB:[["pass yds/g","pas"],["rush yds/g","rush"],["carries/g","car"]],RB:[["touches/g","tch"],["carries/g","car"],["rz tch/g","rz"]],WR:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]],TE:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]]};
 
 function App(){
   const [players,setPlayers]=useState(null);
@@ -245,7 +247,7 @@ function App(){
       ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,players,pick}}/>
       : view==="depth"
       ? <DepthChart {...{team:depthTeam,players,fc,fcName,pick,sel,onBack:()=>setView("player")}}/>
-      : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}}/>}
+      : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}}/>}
 
     <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
       live now: Sleeper player data, your league sync, the trending wire{fc?", FantasyCalc values + a v0 intrinsic":""}. <br/>
@@ -316,7 +318,7 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
     <div className="note">built from live Sleeper depth-chart order; values via the same id+name join. click any name to load it. ordering reflects Sleeper's posted depth, not a projection.</div>
   </div>);
 }
-function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
+function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}){
   const sigP=(()=>{
     if(!sig||!sel) return null;
     if(sel.espn_id && sig.players[String(sel.espn_id)]) return sig.players[String(sel.espn_id)];
@@ -404,7 +406,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
       ) : (fc ? <ThinMarket sel={sel} age={age}/> : <div className="stub" style={{marginTop:12}}>{fcStatus||"values source unreachable"}</div>)
     )}
 
-    {(fn==="val"||fn==="use") && sigP && (
+    {fn==="val" && sigP && (
       <div className="panel pad" style={{marginTop:12,borderColor:sigP.flag==="buy"?"var(--buy)":"var(--line2)"}}>
         <div className="lbl" style={{marginBottom:8}}>usage signal · {sigP.season} season · backtested</div>
         <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)",marginTop:0}}>
@@ -417,6 +419,27 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
       </div>
     )}
 
+    {fn==="use" && sigP && (
+      <div className="panel pad" style={{marginTop:12}}>
+        <div className="head" style={{marginBottom:10}}>
+          <div className="lbl">usage · opportunity · {sigP.season} season</div>
+          <div className="mono small" style={{color:sigP.gap>=0?"var(--buy)":"var(--mut)"}}>gap {sigP.gap>=0?"+":""}{sigP.gap}{sigP.flag==="buy"?" · buy":""}</div>
+        </div>
+        {(USAGE_ROWS[sigP.pos]||USAGE_ROWS.WR).map(([label,key])=>{
+          const z=sigP.z[key], val=key==="shr"?(sigP.m[key]*100).toFixed(0)+"%":sigP.m[key];
+          const w=Math.min(100,Math.max(4,((z+1.5)/4.5)*100));
+          return (
+          <div key={key} style={{display:"flex",alignItems:"center",gap:9,marginBottom:8}}>
+            <span className="lbl" style={{width:84}}>{label}</span>
+            <div className="bar" style={{flex:1}}><div style={{width:w+"%",background:POS[sigP.pos]||"var(--wr)"}}></div></div>
+            <span className="mono small" style={{width:46,textAlign:"right",color:"var(--tx)"}}>{val}</span>
+            <span className="mono faint" style={{width:42,textAlign:"right",fontSize:11}}>{z>=0?"+":""}{z}σ</span>
+          </div>);
+        })}
+        <div className="note">per-game usage vs the {sigP.pos} field ({sigP.season}); bar = standardized within position. snap share / routes / air-yards land with the release-tier nflverse pull on deploy.</div>
+      </div>
+    )}
+
     {fn==="use" && !sigP && <div className="stub" style={{marginTop:12}}>
       <b>usage · opportunity</b> — chunk 2 (python spine)<br/>
       {sig
@@ -426,7 +449,23 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
     {fn==="trd" && <div className="stub" style={{marginTop:12}}>
       <b>trade terminal</b> — chunk 3<br/>
       models a deal on the revealed-preference value scale, weighs each side by contention window + roster need, then builds the decision-ready offer (deep-link out to Sleeper — the public API is read-only).</div>}
-    {fn==="comp" && <div className="stub" style={{marginTop:12}}><b>comps</b> — chunk 2 · archetype + value-path nearest neighbours</div>}
+    {fn==="comp" && sigP && sigP.comps && sigP.comps.length>0 && (
+      <div className="panel pad" style={{marginTop:12}}>
+        <div className="lbl" style={{marginBottom:9}}>statistical comps · similar {sigP.pos} usage + production profile</div>
+        {sigP.comps.map((c,i)=>{
+          const tgt=findSleeper(players,c.name,c.pos);
+          return (
+          <div key={i} onClick={()=>tgt&&pick(tgt)} style={{display:"flex",alignItems:"center",gap:10,padding:"8px 0",cursor:tgt?"pointer":"default",borderBottom:i<sigP.comps.length-1?"1px solid var(--line)":"none"}}>
+            <span className="pos" style={{color:POS[c.pos],background:posBg(c.pos)}}>{c.pos}</span>
+            <span style={{fontWeight:500,flex:1}}>{c.name}</span>
+            <span className="mono small mut">{c.team}</span>
+            {tgt&&<span className="mono faint" style={{fontSize:11}}>↗</span>}
+          </div>);
+        })}
+        <div className="note">nearest neighbours by standardized per-game usage + scoring within position. click to inspect.</div>
+      </div>
+    )}
+    {fn==="comp" && !(sigP&&sigP.comps&&sigP.comps.length>0) && <div className="stub" style={{marginTop:12}}><b>comps</b> — no profile for {sel.full_name} (needs a recent qualifying season)</div>}
     {fn==="news" && <div className="stub" style={{marginTop:12}}><b>player wire</b> — chunk 2 · RSS + injuries + this player's FAAB-bid distribution across leagues</div>}
     {fn==="sim" && <div className="stub" style={{marginTop:12}}><b>season sim</b> — chunk 3 · monte-carlo over your synced schedule + rosters</div>}
   </div>);
@@ -462,6 +501,7 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
       <div style={{marginTop:12}}>
         <div className="head" style={{marginBottom:8}}>
           <div className="mono mut small">{league.name} · {fc?"power ranking by roster value":"by record"}</div>
+          <button className="btn" onClick={()=>loadLeague(null)||window.location.reload()} style={{display:"none"}}></button>
         </div>
         <div className="row" style={{gridTemplateColumns:"1fr"}}>
           {teams.map((t,i)=>{
