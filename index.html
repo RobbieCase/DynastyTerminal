@@ -317,7 +317,13 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
   </div>);
 }
 function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
-  const sigP=sig&&sel&&sel.espn_id?sig.players[String(sel.espn_id)]:null;
+  const sigP=(()=>{
+    if(!sig||!sel) return null;
+    if(sel.espn_id && sig.players[String(sel.espn_id)]) return sig.players[String(sel.espn_id)];
+    const n=norm(sel.full_name);
+    for(const k in sig.players){ if(norm(sig.players[k].name)===n) return sig.players[k]; }
+    return null;
+  })();
   const sigMeta=sig&&sig.meta;
   if(!sel) return (
     <div className="panel pad" style={{marginTop:12,textAlign:"center",padding:"42px 16px"}}>
@@ -413,6 +419,9 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig}){
 
     {fn==="use" && !sigP && <div className="stub" style={{marginTop:12}}>
       <b>usage · opportunity</b> — chunk 2 (python spine)<br/>
+      {sig
+        ? <span style={{color:"var(--warn)"}}>no usage signal for {sel.full_name} — {sel.years_exp===0?"rookie, no NFL snaps in the 2021-25 window yet":"not in the current feed (no qualifying NFL games 2021-25)"}.<br/></span>
+        : <span style={{color:"var(--faint)"}}>signal feed not loaded (check data/signal.json).<br/></span>}
       snap share, route participation, target share, air-yards / aDOT, red-zone touches from nflverse → the lead-indicator panel and the target-depth field viz.</div>}
     {fn==="trd" && <div className="stub" style={{marginTop:12}}>
       <b>trade terminal</b> — chunk 3<br/>
@@ -453,7 +462,6 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
       <div style={{marginTop:12}}>
         <div className="head" style={{marginBottom:8}}>
           <div className="mono mut small">{league.name} · {fc?"power ranking by roster value":"by record"}</div>
-          <button className="btn" onClick={()=>loadLeague(null)||window.location.reload()} style={{display:"none"}}></button>
         </div>
         <div className="row" style={{gridTemplateColumns:"1fr"}}>
           {teams.map((t,i)=>{
