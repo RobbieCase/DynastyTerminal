@@ -317,8 +317,8 @@ function App(){
       : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}}/>}
 
     <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
-      live now: Sleeper player data, your league sync, the trending wire{fc?", FantasyCalc values + a v0 intrinsic":""}. <br/>
-      stubbed for chunk 2 (the python spine): usage/opportunity features, vegas prop-implied points, the revealed-preference trade-solve, and the backtested signal hit-rate.
+      live now: Sleeper data + league sync, the trending wire, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
+      still ahead: survival-curve aging to replace v0 intrinsic, vegas prop-implied points (waiting on the season), and a news/FAAB wire.
     </div>
   </div>);
 }
@@ -565,6 +565,37 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
   </div>);
 }
 
+function RevealedValues({league,fc,players}){
+  const [st,setSt]=useState({status:"idle"});
+  async function run(){
+    setSt({status:"loading"});
+    try{ const r=await computeRevealed(league.league_id,fc,players); setSt({status:"done",...r}); }
+    catch(e){ setSt({status:"error"}); }
+  }
+  return (
+  <div className="panel pad" style={{marginTop:12}}>
+    <div className="head"><div className="lbl">revealed values · beta</div>
+      <button className="btn" onClick={run} disabled={st.status==="loading"}>{st.status==="loading"?"solving…":"compute from league trades"}</button></div>
+    {st.status==="idle" && <div className="note">solve this league's own player values from its real completed trades (across all past seasons), anchored to the market via ridge least-squares. surfaces where your league prices players differently from consensus — the revealed-preference engine, run live on your league.</div>}
+    {st.status==="error" && <div className="note err">couldn't compute — try again in a moment.</div>}
+    {st.status==="done" && (st.trades===0
+      ? <div className="note">no completed trades found across {st.seasons} season{st.seasons===1?"":"s"} — the solver needs trade history. (a brand-new or trade-light league won't have enough yet.)</div>
+      : <div>
+          <div className="head" style={{margin:"4px 0 8px"}}>
+            <div className="mono faint" style={{fontSize:11}}>{st.trades} trades · {st.seasons} season{st.seasons===1?"":"s"} · {st.rows.length} players solved</div>
+            <div className="lbl">market · revealed · Δ</div></div>
+          {st.rows.slice(0,20).map(r=>(
+            <div key={r.sid} style={{display:"flex",alignItems:"center",gap:9,padding:"6px 0",borderBottom:"1px solid var(--line)"}}>
+              <PosChip pos={r.pos}/>
+              <span style={{flex:1,fontSize:13,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{r.name}<span className="mono faint" style={{fontSize:10}}> · {r.n}×</span></span>
+              <span className="mono small mut" style={{width:54,textAlign:"right"}}>{fmt(r.market)}</span>
+              <span className="mono small" style={{width:54,textAlign:"right",color:"var(--wr)"}}>{fmt(r.revealed)}</span>
+              <span className="mono small" style={{width:50,textAlign:"right",color:r.div>=0?"var(--buy)":"var(--sell)"}}>{r.div>=0?"+":""}{r.div.toFixed(0)}%</span>
+            </div>))}
+          <div className="note">Δ = league-revealed vs market. positive = your league trades this player above consensus, negative = below. anchored ridge solve (spine/trade_solve), entirely client-side — no league id hardcoded.</div>
+        </div>)}
+  </div>);
+}
 function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,players,pick,setMyTeam,myLeague}){
   const mineHere=myLeague&&league&&myLeague.leagueId===league.league_id;
   return (
@@ -616,6 +647,7 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
           })}
         </div>
         <div className="note">{mineHere?"your team is saved — head to the trd tab to build trades and get target suggestions.":"tap \"this is me\" on your team to save it, then the trade terminal can suggest targets from this league."}</div>
+        {fc && <RevealedValues league={league} fc={fc} players={players}/>}
       </div>}
   </div>);
 }
@@ -633,6 +665,79 @@ function sigFor(sig,p){if(!sig||!p)return null;
   const idx=sigIndex(sig);if(!idx)return null;const n=norm(p.full_name);
   return idx.byPosName[(p.position||"")+"|"+n]||idx.byName[n]||null;}   // pos-disambiguated, then name
 function sigFlag(sig,p){const s=sigFor(sig,p);return s?s.flag:null;}
+
+// ---- revealed-preference value solver, CLIENT-SIDE over the synced league's real
+// trades. Port of spine/trade_solve.solve_values: ridge least-squares anchored to a
+// FantasyCalc prior, so a player never traded stays at market and traded players move
+// toward what the league's actual deals imply. No league id is hardcoded — it solves
+// whatever league the visitor syncs, so it works for anyone. ----
+function _solveLinear(M,b){                       // Gauss-Jordan, partial pivoting
+  const N=b.length, A=M.map((r,i)=>{const row=Array.from(r);row.push(b[i]);return row;});
+  for(let c=0;c<N;c++){
+    let piv=c; for(let r=c+1;r<N;r++) if(Math.abs(A[r][c])>Math.abs(A[piv][c])) piv=r;
+    [A[c],A[piv]]=[A[piv],A[c]];
+    const d=A[c][c]||1e-9; for(let k=c;k<=N;k++) A[c][k]/=d;
+    for(let r=0;r<N;r++){ if(r===c)continue; const f=A[r][c]; if(f) for(let k=c;k<=N;k++) A[r][k]-=f*A[c][k]; }
+  }
+  return A.map(row=>row[N]);
+}
+function solveValues(trades, prior, lam=1e-3, anchor=1.0){
+  const ids=Object.keys(prior); if(!ids.length) return {values:{},appear:{}};
+  const idx={}; ids.forEach((a,i)=>idx[a]=i); const N=ids.length;
+  const p=ids.map(a=>prior[a]||0), psum=p.reduce((s,x)=>s+x,0), pmean=psum/N;
+  const M=Array.from({length:N},()=>new Float64Array(N)), appear=new Float64Array(N);
+  for(const {A,B} of trades){
+    const s={};
+    A.forEach(a=>{ if(a in idx){ s[idx[a]]=(s[idx[a]]||0)+1; appear[idx[a]]++; } });
+    B.forEach(b=>{ if(b in idx){ s[idx[b]]=(s[idx[b]]||0)-1; appear[idx[b]]++; } });
+    const nz=Object.keys(s).map(Number);
+    for(const i of nz) for(const j of nz) M[i][j]+=s[i]*s[j];        // AᵀA
+  }
+  const an=anchor/N;
+  for(let i=0;i<N;i++){ for(let j=0;j<N;j++) M[i][j]+=an; M[i][i]+=lam; }
+  const b=p.map(pi=>lam*pi+anchor*pmean);
+  let x=_solveLinear(M,b);
+  const xsum=x.reduce((s,v)=>s+v,0)||1, k=psum/xsum; x=x.map(v=>v*k);  // pin scale to prior total
+  const values={},ap={}; ids.forEach((a,i)=>{values[a]=x[i];ap[a]=appear[i];});
+  return {values,appear:ap};
+}
+async function leagueChain(leagueId, maxSeasons=8){    // follow previous_league_id for full history
+  const ids=[]; let id=leagueId, g=0;
+  while(id && g++<maxSeasons){ ids.push(id); try{ const lg=await jget(`${SLEEP}/league/${id}`); id=lg&&lg.previous_league_id; }catch(e){ break; } }
+  return ids;
+}
+function tradesFromTxns(all){    // parse Sleeper transactions -> [{A,B}] (mirrors trade_solve.sleeper_ingest)
+  const trades=[];
+  for(const t of all||[]){
+    if(!t||t.type!=="trade"||t.status!=="complete") continue;
+    const byRoster={};
+    for(const [pid,rid] of Object.entries(t.adds||{})) (byRoster[rid]=byRoster[rid]||[]).push("p:"+pid);
+    for(const dp of (t.draft_picks||[])) (byRoster[dp.owner_id]=byRoster[dp.owner_id]||[]).push("pick:"+dp.round);
+    const sides=Object.values(byRoster);
+    if(sides.length===2) trades.push({A:sides[0],B:sides[1]});
+  }
+  return trades;
+}
+async function computeRevealed(leagueId, fc, players){
+  const ids=await leagueChain(leagueId);
+  const reqs=[]; ids.forEach(id=>{ for(let w=1;w<=18;w++) reqs.push(jget(`${SLEEP}/league/${id}/transactions/${w}`).catch(()=>[])); });
+  const trades=tradesFromTxns((await Promise.all(reqs)).flat());
+  if(!trades.length) return {trades:0, seasons:ids.length, rows:[]};
+  const assets=new Set(); trades.forEach(t=>{t.A.forEach(a=>assets.add(a));t.B.forEach(a=>assets.add(a));});
+  const prior={};
+  assets.forEach(a=>{
+    if(a.startsWith("p:")){ const o=fc&&fc[a.slice(2)]; prior[a]=o?o.value:300; }
+    else if(a.startsWith("pick:")){ prior[a]=PICK_BASE[+a.split(":")[1]]||120; }
+  });
+  const {values,appear}=solveValues(trades, prior);
+  const rows=[];
+  assets.forEach(a=>{ if(!a.startsWith("p:")||(appear[a]||0)<2) return;
+    const sid=a.slice(2), market=prior[a], rev=values[a], p=players&&players[sid];
+    rows.push({sid, name:p?p.full_name:sid, pos:p?p.position:"WR", market, revealed:rev, n:appear[a],
+      div:market?((rev-market)/market*100):0}); });
+  rows.sort((x,y)=>Math.abs(y.div)-Math.abs(x.div));
+  return {trades:trades.length, seasons:ids.length, rows};
+}
 
 const PICKS=[["2026 early 1st",5000],["2026 mid 1st",4200],["2026 late 1st",3500],["2026 2nd",1500],["2026 3rd",600],["2027 1st",3800],["2027 2nd",1300],["2027 3rd",550]];
 // flat dynasty pick estimates, discounted by how far out the draft is and scaled for
