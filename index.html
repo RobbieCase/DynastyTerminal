@@ -429,6 +429,46 @@ function PriceHistory({sel,set}){
     <div className="note">self-accumulated daily FantasyCalc snapshots — the value time-series that can't be backfilled. grows one row per day the spine runs.</div>
   </div>);
 }
+// ESPN's public NFL news feed (CORS-friendly). Fetched once, cached; entity- + text-matched
+// to players. 39/50 articles carry explicit athlete tags, with a name-text fallback.
+let _newsPromise=null;
+function loadNews(){
+  if(_newsPromise)return _newsPromise;
+  _newsPromise=(async()=>{
+    const d=await jget("https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=50");
+    return (d.articles||[]).map(a=>({
+      headline:a.headline, desc:a.description||"", published:a.published,
+      href:(a.links&&a.links.web&&a.links.web.href)||null,
+      athletes:(a.categories||[]).filter(c=>c.type==="athlete").map(c=>norm(c.description||"")),
+      text:norm((a.headline||"")+" "+(a.description||""))}));
+  })().catch(()=>[]);
+  return _newsPromise;
+}
+function NewsItem({a}){
+  const dt=(()=>{try{return new Date(a.published).toLocaleDateString(undefined,{month:"short",day:"numeric"});}catch(e){return"";}})();
+  return (
+    <a href={a.href||undefined} target="_blank" rel="noopener noreferrer"
+      style={{display:"block",textDecoration:"none",padding:"9px 0",borderBottom:"1px solid var(--line)"}}>
+      <div style={{fontSize:13,color:"var(--tx)"}}>{a.headline}{a.href?<span className="mono faint" style={{fontSize:10}}> ↗</span>:""}</div>
+      <div className="mono faint" style={{fontSize:10,marginTop:2}}>{dt} · espn</div>
+      {a.desc&&<div className="small mut" style={{marginTop:3,lineHeight:1.5}}>{a.desc.slice(0,170)}{a.desc.length>170?"…":""}</div>}
+    </a>);
+}
+function PlayerNews({sel}){
+  const [news,setNews]=useState(null);
+  useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
+  if(news===null)return <div className="stub" style={{marginTop:12}}>loading ESPN news…</div>;
+  const nm=norm(sel.full_name);
+  const mine=news.filter(a=>a.athletes.includes(nm)||(nm.length>4&&a.text.includes(nm)));
+  return (
+  <div className="panel pad" style={{marginTop:12}}>
+    <div className="lbl" style={{marginBottom:8}}>news · {sel.full_name}</div>
+    {mine.length?mine.slice(0,6).map((a,i)=><NewsItem key={i} a={a}/>)
+      :<div><div className="note" style={{marginTop:0}}>no recent ESPN headlines mention {sel.full_name} — around the league:</div>
+        {news.slice(0,5).map((a,i)=><NewsItem key={i} a={a}/>)}</div>}
+    <div className="note">live from ESPN's NFL feed, matched to this player by entity tag + name. offseason coverage is thin; it fills in during the season.</div>
+  </div>);
+}
 function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){
   const [snaps,setSnaps]=useState(null);
   useEffect(()=>{let dead=false;loadValueSeries().then(s=>{if(!dead)setSnaps(s);});return ()=>{dead=true;};},[]);
@@ -642,7 +682,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
       </div>
     )}
     {fn==="comp" && !(sigP&&sigP.comps&&sigP.comps.length>0) && <div className="stub" style={{marginTop:12}}><b>comps</b> — no profile for {sel.full_name} (needs a recent qualifying season)</div>}
-    {fn==="news" && <div className="stub" style={{marginTop:12}}><b>player wire</b> — chunk 2 · RSS + injuries + this player's FAAB-bid distribution across leagues</div>}
+    {fn==="news" && <PlayerNews sel={sel}/>}
     {fn==="sim" && <div className="stub" style={{marginTop:12}}><b>season sim</b> — chunk 3 · monte-carlo over your synced schedule + rosters</div>}
   </div>);
 }
