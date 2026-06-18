@@ -14,13 +14,17 @@ Opportunity is defined per position because "opportunity" means different things
 """
 import pandas as pd, numpy as np
 
-METRICS = ["tgt", "tch", "rz", "shr", "car", "rush", "pas", "pts"]
-OPP_BY_POS = {
+METRICS = ["tgt", "tch", "rz", "shr", "car", "rush", "pas", "pts", "snap", "ay"]
+# base opportunity is always available (hvpkod). nflverse cols (z_snap = snap share,
+# z_ay = air-yards share) are appended per position ONLY when that metric has real
+# data this run — so the signal upgrades on the Action and reverts cleanly in a sandbox.
+BASE_OPP_BY_POS = {
     "QB": ["z_pas", "z_car", "z_rush"],
     "RB": ["z_tch", "z_car", "z_rz"],
     "WR": ["z_tgt", "z_shr", "z_rz"],
     "TE": ["z_tgt", "z_shr", "z_rz"],
 }
+EXTRA_OPP_BY_POS = {"QB": [], "RB": ["z_snap"], "WR": ["z_snap", "z_ay"], "TE": ["z_snap", "z_ay"]}
 
 def _z(s):
     sd = s.std()
@@ -31,12 +35,18 @@ def _agg(g):
         tgt=g.Targets.mean(), tch=g.Touches.mean(), rz=g.RzTarget.mean(),
         shr=g.tgt_share.mean(), car=g.TouchCarries.mean(), rush=g.RushingYDS.mean(),
         pas=g.PassingYDS.mean(), pts=g.TotalPoints.mean(), n=len(g),
+        snap=g["snap"].mean() if "snap" in g.columns else 0.0,
+        ay=g["ay"].mean() if "ay" in g.columns else 0.0,
     )
 
 def _add_z_opp(d):
     for c in METRICS:
-        d["z_" + c] = d.groupby(["season", "pos"])[c].transform(_z)
-    d["z_opp"] = d.apply(lambda r: float(np.mean([r[c] for c in OPP_BY_POS[r["pos"]]])), axis=1)
+        if c in d.columns:
+            d["z_" + c] = d.groupby(["season", "pos"])[c].transform(_z)
+    have = {c for c in ("snap", "ay") if c in d.columns and d[c].abs().sum() > 0}
+    opp = {p: BASE_OPP_BY_POS[p] + [zc for zc in EXTRA_OPP_BY_POS[p] if zc[2:] in have]
+           for p in BASE_OPP_BY_POS}
+    d["z_opp"] = d.apply(lambda r: float(np.mean([r[c] for c in opp[r["pos"]]])), axis=1)
     d["gap"] = d["z_opp"] - d["z_pts"]     # opportunity running ahead of scoring
     return d
 
