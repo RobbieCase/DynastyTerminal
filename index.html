@@ -929,7 +929,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
         <span className="mono small mut" style={{width:64}}>{lblGet} {fmt(aG)}</span>
         <div className="bar" style={{flex:1}}><div style={{width:(aG/(aG+aGv)*100)+"%",background:"var(--wr)"}}></div></div>
         <span className="mono small mut" style={{width:64,textAlign:"right"}}>{fmt(aGv)} {lblGive}</span></div>}
-      <div className="note">FantasyCalc values at your format; roster-spot tax (4%/extra body) models consolidation. revealed-preference solve + window weighting arrive with the live chunk-2 feed.</div>
+      <div className="note">FantasyCalc values at your format, with a roster-spot tax (4%/extra body) for consolidation. The buy signal currently tilts target suggestions, not the verdict. Roadmap: fold in the league's revealed-preference values (lg tab) and a contention-window weighting.</div>
     </div>
   </div>);
 }
