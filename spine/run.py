@@ -41,8 +41,8 @@ def fit_aging(df):
     career = career.rename(columns={"PlayerId": "player"})
     curves = aging.fit_age_curves(career[["player", "pos", "season", "age", "ppg"]])
     for pos, c in curves.items():
-        m = c["mult"]
-        print(f"aging: {pos} n={c['n']} · mult@23={m.get(23,'-')} @27={m.get(27,'-')} @30={m.get(30,'-')} · surv@30={c['surv'].get(30,'-')}")
+        s = c["surv"]
+        print(f"aging: {pos} n={c['n']} · survival P(relevant) @27={s.get(27,'-')} @30={s.get(30,'-')} @33={s.get(33,'-')}")
     return curves
 
 def main():
