@@ -1,87 +1,55 @@
 # DWR / Dynasty Terminal — Roadmap
 
-Living backlog. Newest direction at top; "shipped" log at the bottom for context.
+Living backlog. Open items at top; shipped log at the bottom.
 
 ---
 
-## 1. Trade terminal
+## Open / next
 
-### 1a. Smarter fill-needs (prioritize buy-low up-and-comers, not just big names)
-Today: fill-needs ranks pool players by `FantasyCalc value × 1.06 if buy-flag` and takes the top of your weak positions ([index.html](index.html) `ranked`/`targets`). This surfaces the *most expensive* names, not the best *gets*.
+### A. Value-history backfill — decision pending
+History **is** recoverable from DynastyProcess git history (~349 dated commits), but those are **FantasyPros-ECR-derived**, not FantasyCalc — a *parallel* series, not a clean backfill of our moat. Decide:
+1. Build a separate DynastyProcess-derived historical series (instant multi-year trends for charts/watchlists, labeled as a different source), or
+2. Keep FantasyCalc forward-only (one clean source, slow to deepen).
+Recommendation: option 1 if we want multi-year visuals before the FantasyCalc series matures.
 
-Want: rank by a **buy-low / up-and-comer score**, not raw market value. Proposed composite (all available in `signal.json` + Sleeper):
-- **usage gap** `z_opp − z_pts` (the backtested signal — opportunity ahead of scoring) — primary.
-- **buy flag** (top-quartile gap) — boost.
-- **snap-share** level/trend (nflverse) — rising role.
-- **age** — favor ascending players.
-- **market value** — *invert* lightly so we surface under-priced risers, not established stars.
+### B. Full mode-aware surfaces (in-season vs offseason)
+The header **mode badge** ships (offseason / in-season · wk N, from Sleeper `/state/nfl`). Still to do: actually *switch* default surfaces and emphasis by phase —
+- Offseason: trade market, rookie/pick analysis, historical trends, portfolio.
+- In-season: lead with live game-to-game data, weekly usage, matchup context.
+- Add the ESPN **gamelog** (game-by-game) to the stat tab for the in-season current row.
+Can't be validated until the season; build the scaffolding, prove it in the fall.
 
-Render each suggestion with the "why" (gap, snap%, age) so it's legible. This is "how to analyze up-and-comers": a player whose usage/role is climbing while market value hasn't caught up.
+### C. News — extensions
+Per-player ESPN news ships. Follow-ups: a **global league-wide news wire**, injury surfacing, and **FAAB-bid monitoring** (news-driven adds) once leagues are synced.
 
-### 1b. Position sections in fill-needs
-Add **ALL / QB / RB / WR / TE** sub-tabs to the suggestions list, each showing buy-low candidates for that position (not just the two weak spots). Bump list length **top 6 → top 8**.
-
-### 1c. Verdict upgrade
-Note copy fixed (was claiming a "chunk-2 feed" that's stale). Current verdict = FantasyCalc give-vs-get within an 8% band + 4%/extra-body consolidation tax; the buy signal only tilts *suggestions*, not the verdict. Roadmap:
-- Fold the league's **revealed-preference values** (now live in the `lg` tab) into the verdict when available, falling back to market.
-- Add **contention-window weighting** (your team's compete-now vs rebuild posture should reweight youth vs production).
-
----
-
-## 2. Value history — backfill beyond what we've stored?
-FantasyCalc's API is **current-only** (no history) — that's exactly why `snapshot.py` accumulates the daily moat. The stored series only goes back to its first run (2026-06-17).
-
-**Investigated (2026-06-18):**
-- **DynastyProcess** (`github.com/dynastyprocess/data`, `files/values.csv`): the file is a **current snapshot** (single `scrape_date`), BUT it has **~349 dated commits** in git history → a multi-year historical series is recoverable by walking commit SHAs (fetch `raw` at each commit, doable on the Action via the GitHub API). **Catch:** these are **FantasyPros-ECR-derived** values (`value_1qb`/`value_2qb`), *not* FantasyCalc — different methodology and scale, so they **cannot cleanly extend our FantasyCalc moat**.
-- KeepTradeCut — history exists, no free API.
-
-**Decision needed (not built):** two honest options —
-1. Build a **separate** DynastyProcess-derived historical series (parallel to the FantasyCalc moat) → instant multi-year value trends for charts/watchlists, clearly labeled as a different source. One-time git-history backfill script + nightly append.
-2. Keep **FantasyCalc forward-only** as the single clean moat (simpler, one source, but slow to accumulate).
-
-Recommendation: option 1 *if* we want multi-year trend visuals soon (label the source), since the FantasyCalc series will take months to get deep. Otherwise defer.
+### D. Trade verdict — deeper
+Revealed-values basis + contention-window tilt ship. Next: scale the consolidation tax by the league's actual roster/bench/taxi settings (vs the current flat 4%/body), and ultimately let the revealed-preference solver *learn* the discount.
 
 ---
 
-## 3. News section
-Build the `news` surface (currently a stub):
-- Aggregate RSS / sports feeds (ESPN, Rotowire, NFL.com, beat writers).
-- **Keyword/entity match to players** (name + team) so each player view shows their relevant news, and a global wire shows league-wide.
-- Tie into FAAB monitoring (who's getting bid on, news-driven adds).
-- Reachability: RSS/news fetch likely needs the Action or a CORS-friendly source — confirm before building client-side.
-
----
-
-## 4. Watchlists / Portfolio tracking  ← makes the moat clock visible
-Daily-driver feature. "Show me the players I'm tracking and how their intrinsic value changed over time."
-- Track an arbitrary set of players (localStorage, like `dwr_myleague`).
-- Per-player value sparkline + deltas from the `data` branch snapshots (the `PriceHistory` plumbing already exists — generalize it to a list).
-- This is where the value time-series stops being an internal asset and becomes the reason to open DWR daily. **High priority** — it's the visible payoff of the moat.
-
----
-
-## 5. Eventual overhaul — modes + deep stats
-
-### 5a. Offseason vs in-season modes (auto-switch as the season approaches)
-- **Offseason mode:** trade-market monitoring, rookie-draft analysis, pick valuation, historical value trends, league portfolio management, revealed-preference market, news/FAAB.
-- **In-season mode:** live game-to-game data, weekly usage updates, lineup/matchup context.
-- Auto-detect from the NFL calendar (Sleeper `state`/season type) and switch the default surface.
-
-### 5b. Year-by-year player stat history
-- Click into a player → full season-by-season stat history.
-- In-season: updates game-by-game.
-- Data: hvpkod weekly (2021+) + nflverse `stats_player_week` (deep history, already wired for aging/air-yards).
-
----
-
-## Previously identified / in flight
+## In flight / blocked
 - **Live-verify the revealed-preference solve** on a real league (needs a Sleeper username; client-side, no hardcoding).
-- **Spine-side name-keying** for `signal.json` (deterministic join; tracked as a spawned task).
-- **Survival → value multiplier**: aging survival shipped as context; a usable price multiplier needs a proper model (Cox w/ covariates), not just more years.
-- **Vegas prop-implied points** — deferred to the season (props go live, de-vig).
-- **In-season lead-lag validation** — can only be proven once games are played (fall).
+- **Spine-side name-keying** for `signal.json` (deterministic join; spawned task).
+- **Survival → value multiplier**: aging survival ships as context; a usable price multiplier needs a proper model (Cox w/ covariates), not just more years.
+- **Vegas prop-implied points** — deferred to the season.
+- **In-season lead-lag validation** — only provable once games are played.
 
 ---
 
-## Shipped (recent)
-- Moat-clock fix (snapshots on orphan `data` branch); screener; pick auto-derivation; `signal.json` name-join fix (buy flags); nflverse snap + air-yards (display); gap-aware intrinsic/edge; value-history sparkline; **client-side revealed-preference trade-solve**; KM survival aging (context) fit on deep 2010–25 history.
+## Shipped
+- **Moat-clock fix** — value snapshots on the orphan `data` branch (local pushes can't clobber).
+- **Screener** — sortable mispricing board over the universe.
+- **Pick auto-derivation** — owned picks from Sleeper's traded-pick ledger, format-scaled.
+- **signal.json name-join fix** — repaired buy flags app-wide (was espn_id-keyed, ~0 hits).
+- **nflverse snap + air-yards** (display) — incl. the stats_player air-yards source fix.
+- **Gap-aware intrinsic/edge** — edge reflects the backtested usage gap, not just the age tier.
+- **Value-history sparkline** — player market tab, from the `data` branch snapshots.
+- **Client-side revealed-preference trade-solve** — solves your synced league's real trades (no league id hardcoded).
+- **KM survival aging** (context) — fit on deep 2010–25 nflverse history; "aging outlook" panel.
+- **Trade 1a/1b** — buy-low fill-needs (gap + flag + snap + youth − price), ALL/QB/RB/WR/TE tabs, top 8, with "why".
+- **Trade 1c** — verdict value-basis (market | revealed) + contention-window tilt; **fixed an inverted verdict** (give vs get).
+- **Consolidation tax fix** — counts real roster bodies only (picks & throw-ins excluded), capped.
+- **Watchlists / portfolio tracking** — ☆ any player; board of edge/gap/value + "since tracked" deltas. The moat clock, personal.
+- **News** — ESPN feed, entity/name-matched to the player, with an around-the-league fallback.
+- **Year-by-year stat history** — ESPN athlete stats by season (`stat` tab), position-appropriate.
+- **Mode badge** — offseason/in-season indicator from Sleeper state.
