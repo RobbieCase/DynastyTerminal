@@ -871,6 +871,18 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const [get,setGet]=useState([]);const [give,setGive]=useState([]);
   const [q,setQ]=useState("");const [qside,setQside]=useState("get");
   const [tgtPos,setTgtPos]=useState("ALL");const [tgtSort,setTgtSort]=useState("buy");
+  // verdict basis: market (FantasyCalc) vs revealed (this league's solved trades); + contention window
+  const [valMode,setValMode]=useState("market");const [windowMode,setWindowMode]=useState("balanced");
+  const [revealed,setRevealed]=useState(null);const [revStatus,setRevStatus]=useState("");
+  useEffect(()=>{
+    if(valMode!=="revealed"||!mine||revealed)return;
+    let dead=false; setRevStatus("solving from league trades…");
+    computeRevealed(myLeague.leagueId,fc,players).then(r=>{ if(dead)return;
+      const m={}; (r.rows||[]).forEach(x=>{m[x.sid]=x.revealed;}); setRevealed(m);
+      setRevStatus(r.trades?`${r.trades} trades · ${Object.keys(m).length} players solved`:"no completed trades — using market");
+    }).catch(()=>{if(!dead)setRevStatus("solve failed — using market");});
+    return ()=>{dead=true;};
+  },[valMode,mine,revealed,myLeague&&myLeague.leagueId,fc,players]);
   const pidx=useMemo(()=>players?Object.values(players).filter(p=>["QB","RB","WR","TE"].includes(p.position)&&p.team&&p.full_name).sort((x,y)=>(x.search_rank||9999)-(y.search_rank||9999)):[],[players]);
   const sugg=q.trim()?pidx.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase())).slice(0,6):[];
   const valOf=it=>it.pick?it.value:(o=>o?o.value:0)(fcVal(fc,fcName,it));
@@ -917,8 +929,20 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const realBodies=list=>list.filter(it=>!it.pick&&valOf(it)>=0.10*topPiece).length;
   const adj=(sum,c,oc)=>{const x=Math.min(4,Math.max(0,c-oc));return x?sum*(1-0.04*x):sum;};
   const aG=adj(sumG,realBodies(get),realBodies(give)),aGv=adj(sumGv,realBodies(give),realBodies(get));
-  const diff=aGv-aG;const tot=Math.max(aG,aGv,1);
-  const verdict=!get.length||!give.length?"build a trade":Math.abs(diff)/tot<0.08?"fair":diff>0?"you win value":"you overpay";
+  // verdict basis: revealed value where the league's trades solved one, else market; then a
+  // contention-window tilt (rebuild favors youth + picks, contend favors proven/win-now).
+  const cmult=it=>{
+    if(windowMode==="balanced")return 1;
+    if(it.pick)return windowMode==="rebuild"?1.12:0.88;
+    const a=ageFrom(it.birth_date); if(a==null)return 1;
+    return windowMode==="rebuild"?Math.max(0.85,Math.min(1.15,1+(25-a)*0.03)):Math.max(0.88,Math.min(1.12,1+(a-25)*0.02));
+  };
+  const vbase=it=>(valMode==="revealed"&&revealed&&!it.pick&&revealed[it.player_id]!=null)?revealed[it.player_id]:valOf(it);
+  const vverdict=it=>vbase(it)*cmult(it);
+  const avG=adj(get.reduce((s,i)=>s+vverdict(i),0),realBodies(get),realBodies(give));
+  const avGv=adj(give.reduce((s,i)=>s+vverdict(i),0),realBodies(give),realBodies(get));
+  const diff=avGv-avG;const tot=Math.max(avG,avGv,1);   // diff = give − get; >0 means you send more
+  const verdict=!get.length||!give.length?"build a trade":Math.abs(diff)/tot<0.08?"fair":diff>0?"you overpay":"you win value";
   const lblGet=mine?"I get":"side A",lblGive=mine?"I give":"side B";
 
   const Col=({title,list,setter,sum,adjsum})=>(
@@ -1016,11 +1040,22 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
     <div className="panel pad" style={{marginTop:12,borderColor:verdict==="fair"?"var(--buy)":"var(--line2)"}}>
       <div className="head"><div className="lbl">verdict</div>
         <div className="mono" style={{color:verdict==="fair"?"var(--buy)":verdict==="build a trade"?"var(--mut)":verdict==="you win value"?"var(--buy)":"var(--warn)"}}>{verdict}</div></div>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center",marginTop:8}}>
+        <span className="lbl">basis</span>
+        <span className={"toggle"+(valMode==="market"?" on":"")} onClick={()=>setValMode("market")}>market</span>
+        {mine?<span className={"toggle"+(valMode==="revealed"?" on":"")} onClick={()=>setValMode("revealed")}>revealed</span>
+          :<span className="toggle" style={{opacity:.4}} title="sync a league first">revealed</span>}
+        <span style={{width:1,height:16,background:"var(--line2)"}}></span>
+        <span className="lbl">window</span>
+        {["contend","balanced","rebuild"].map(w=>(
+          <span key={w} className={"toggle"+(windowMode===w?" on":"")} onClick={()=>setWindowMode(w)}>{w}</span>))}
+      </div>
+      {valMode==="revealed"&&revStatus&&<div className="note" style={{marginTop:6}}>{revStatus}</div>}
       {get.length>0&&give.length>0&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:9}}>
-        <span className="mono small mut" style={{width:64}}>{lblGet} {fmt(aG)}</span>
-        <div className="bar" style={{flex:1}}><div style={{width:(aG/(aG+aGv)*100)+"%",background:"var(--wr)"}}></div></div>
-        <span className="mono small mut" style={{width:64,textAlign:"right"}}>{fmt(aGv)} {lblGive}</span></div>}
-      <div className="note">FantasyCalc values at your format, with a roster-spot tax for consolidation (4%/extra rosterable body — picks &amp; throw-ins excluded, capped). The buy signal currently tilts target suggestions, not the verdict. Roadmap: fold in the league's revealed-preference values (lg tab) and a contention-window weighting.</div>
+        <span className="mono small mut" style={{width:64}}>{lblGet} {fmt(avG)}</span>
+        <div className="bar" style={{flex:1}}><div style={{width:(avG/(avG+avGv)*100)+"%",background:"var(--wr)"}}></div></div>
+        <span className="mono small mut" style={{width:64,textAlign:"right"}}>{fmt(avGv)} {lblGive}</span></div>}
+      <div className="note">basis: <b style={{color:"var(--mut)"}}>{valMode==="revealed"?"your league's revealed-preference values (solved from real trades), market where a player hasn't traded":"FantasyCalc market values at your format"}</b>{windowMode!=="balanced"?`, tilted for a ${windowMode} window (`+(windowMode==="rebuild"?"youth & picks up":"proven & win-now up")+")":""}. Roster-spot tax (4%/extra rosterable body, capped) still applies. Per-piece chips above show market price.</div>
     </div>
   </div>);
 }
