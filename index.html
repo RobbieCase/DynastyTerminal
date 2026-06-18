@@ -811,7 +811,8 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const pickChips=ownedPicks||PICKS.map(([nm,v])=>({pick:true,id:"pk_"+nm,name:nm,value:v}));
 
   const [get,setGet]=useState([]);const [give,setGive]=useState([]);
-  const [q,setQ]=useState("");const [qside,setQside]=useState("get");const [mode,setMode]=useState("fit");
+  const [q,setQ]=useState("");const [qside,setQside]=useState("get");
+  const [tgtPos,setTgtPos]=useState("ALL");const [tgtSort,setTgtSort]=useState("buy");
   const pidx=useMemo(()=>players?Object.values(players).filter(p=>["QB","RB","WR","TE"].includes(p.position)&&p.team&&p.full_name).sort((x,y)=>(x.search_rank||9999)-(y.search_rank||9999)):[],[players]);
   const sugg=q.trim()?pidx.filter(p=>p.full_name.toLowerCase().includes(q.toLowerCase())).slice(0,6):[];
   const valOf=it=>it.pick?it.value:(o=>o?o.value:0)(fcVal(fc,fcName,it));
@@ -833,9 +834,22 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const avg={};["QB","RB","WR","TE"].forEach(P=>avg[P]=sums.length?sums.reduce((a,b)=>a+b[P],0)/sums.length:0);
   const needs=["QB","RB","WR","TE"].map(P=>({P,need:avg[P]-(myS[P]||0)})).sort((a,b)=>b.need-a.need);
   const weak=needs.filter(n=>n.need>0).slice(0,2).map(n=>n.P);
-  const fb=p=>sigFlag(sig,p)==="buy"?1.06:1;
-  const ranked=pool.slice().sort((a,b)=>valOf(b.p)*fb(b.p)-valOf(a.p)*fb(a.p));
-  const targets=(mode==="fit"&&weak.length?ranked.filter(x=>weak.includes(x.p.position)):ranked).slice(0,6);
+  // buy-low / up-and-comer score: surface ascending players the market hasn't priced.
+  // gap is the backtested signal (weighted highest); + buy flag, snap-share role, youth;
+  // − a light price penalty so it's buy-LOW, not just the biggest names. Weights heuristic.
+  const buyScore=p=>{
+    const s=sigFor(sig,p); if(!s) return -1;                 // no signal -> not a buy-low candidate
+    const gapN=Math.max(0,Math.min(1,(s.gap+1)/3));          // gap (σ) -> 0..1
+    const snap=s.snap!=null?s.snap:0.5;
+    const a=ageFrom(p.birth_date);
+    const youth=a!=null?Math.max(0,Math.min(1,(27-a)/6)):0.4;
+    const priceN=Math.max(0,Math.min(1,valOf(p)/8000));
+    return 0.45*gapN + 0.15*(s.flag==="buy"?1:0) + 0.15*snap + 0.15*youth - 0.10*priceN;
+  };
+  const VALUE_FLOOR=300;
+  const cand=pool.filter(x=>(tgtPos==="ALL"||x.p.position===tgtPos)&&valOf(x.p)>=VALUE_FLOOR)
+    .map(x=>({...x,score:buyScore(x.p),val:valOf(x.p),sg:sigFor(sig,x.p)}));
+  const targets=cand.sort((a,b)=>tgtSort==="buy"?b.score-a.score:b.val-a.val).slice(0,8);
 
   const sumG=get.reduce((s,i)=>s+valOf(i),0),sumGv=give.reduce((s,i)=>s+valOf(i),0);
   // consolidation tax: only REAL roster bodies create roster-spot pressure — exclude picks
@@ -889,22 +903,36 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
     {mine && <div className="panel pad" style={{marginTop:12}}>
       <div className="head"><div className="lbl">positional needs</div>
         <div style={{display:"flex",gap:6}}>
-          <span className={"toggle"+(mode==="fit"?" on":"")} onClick={()=>setMode("fit")}>fill needs</span>
-          <span className={"toggle"+(mode==="bpa"?" on":"")} onClick={()=>setMode("bpa")}>best available</span></div></div>
+          <span className={"toggle"+(tgtSort==="buy"?" on":"")} onClick={()=>setTgtSort("buy")}>buy-low</span>
+          <span className={"toggle"+(tgtSort==="value"?" on":"")} onClick={()=>setTgtSort("value")}>by value</span></div></div>
       <div style={{display:"flex",gap:14,flexWrap:"wrap",marginTop:8}}>
         {needs.map(n=>(<div key={n.P} style={{fontSize:12}}>
           <span style={{color:POS[n.P]}}>{n.P}</span> <span className="mono" style={{color:n.need>0?"var(--warn)":"var(--buy)"}}>{n.need>0?"need":"surplus"}</span>
           <span className="mut mono" style={{fontSize:10}}> {n.need>0?"−":"+"}{fmt(Math.abs(Math.round(n.need)))}</span></div>))}
       </div>
-      <div className="lbl" style={{margin:"12px 0 6px"}}>{mode==="fit"?"targets at your weak spots":"top targets in your league"}</div>
-      {targets.length===0&&<div className="mono faint" style={{fontSize:11}}>no targets — load FantasyCalc values (deploy)</div>}
-      {targets.map(({p,owner})=>{const fl=sigFlag(sig,p);const added=has(get,p);return(
-        <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1}}>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",margin:"12px 0 8px"}}>
+        {["ALL","QB","RB","WR","TE"].map(P=>{const isWeak=weak.includes(P);return(
+          <span key={P} className={"toggle"+(tgtPos===P?" on":"")} onClick={()=>setTgtPos(P)}
+            style={tgtPos===P&&P!=="ALL"?{color:POS[P],borderColor:POS[P]}:{}}>
+            {P.toLowerCase()}{isWeak&&<span style={{color:"var(--warn)"}}> •</span>}</span>);})}
+      </div>
+      {targets.length===0&&<div className="mono faint" style={{fontSize:11}}>{fc?"no candidates at this position":"no targets — load FantasyCalc values (deploy)"}</div>}
+      {targets.map(({p,owner,score,sg})=>{const added=has(get,p);const a=ageFrom(p.birth_date);return(
+        <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1,alignItems:"flex-start"}}>
           <PosChip pos={p.position}/>
-          <span style={{flex:1}}>{p.full_name}{fl==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}
-            <span className="mut mono" style={{fontSize:10}}> · {owner}</span></span>
+          <div style={{flex:1,minWidth:0}}>
+            <div>{p.full_name}{sg&&sg.flag==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}
+              <span className="mut mono" style={{fontSize:10}}> · {owner}</span></div>
+            <div className="mono faint" style={{fontSize:10,marginTop:2}}>
+              {sg?`gap ${sg.gap>=0?"+":""}${sg.gap}`:"no signal"}
+              {sg&&sg.snap!=null?` · snap ${Math.round(sg.snap*100)}%`:""}
+              {a!=null?` · ${a.toFixed(1)}y`:""}</div>
+          </div>
           <span className="mono small mut">{fmt(valOf(p))}</span>
           <span className="mono" style={{color:"var(--wr)",fontSize:11}}>+ get</span></div>);})}
+      <div className="note">{tgtSort==="buy"
+        ?"buy-low score: usage gap (backtested) + buy flag + snap-share role + youth, minus a price penalty — ascending players the market hasn't caught up to. • marks your weak spots."
+        :"ranked by raw market value (best available)."}</div>
     </div>}
 
     <div className="panel pad" style={{marginTop:12}}>
