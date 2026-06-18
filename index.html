@@ -159,7 +159,7 @@ function App(){
   const [set,setSet]=useState({sf:false,ppr:1,teams:12});
   // league
   const [uname,setUname]=useState("");
-  const [season,setSeason]=useState("2025");
+  const [season,setSeason]=useState("2026");
   const [leagues,setLeagues]=useState(null);
   const [league,setLeague]=useState(null);
   const [teams,setTeams]=useState(null);
@@ -223,6 +223,7 @@ function App(){
     }catch(e){setLStatus("sync failed — check the name/season, or deploy the page");}
   }
   async function loadLeague(lg){
+    if(!lg){setLeague(null);setTeams(null);setLeagues(null);setLStatus("");return;}
     setLeague(lg);setLStatus("loading rosters…");setTeams(null);
     try{
       const [ros,us]=await Promise.all([jget(`${SLEEP}/league/${lg.league_id}/rosters`),jget(`${SLEEP}/league/${lg.league_id}/users`)]);
@@ -278,7 +279,7 @@ function App(){
 
     {/* function tabs */}
     <div className="tabs">
-      {[["val","value"],["use","usage"],["mkt","market"],["stat","stats"],["comp","comps"],["news","wire"]].map(([k,d])=>(
+      {[["val","value"],["use","usage"],["mkt","market"],["comp","comps"],["news","wire"]].map(([k,d])=>(
         <span key={k} className={"tab"+(view==="player"&&fn===k?" on":"")} onClick={()=>{setFn(k);setView("player");}}><b>{k}</b> {d}</span>
       ))}
       <span className={"tab"+(view==="scr"?" on":"")} onClick={()=>setView("scr")}><b>scr</b> screener</span>
@@ -318,7 +319,7 @@ function App(){
     </div>
 
     {view==="league"
-      ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,players,pick,setMyTeam,myLeague}}/>
+      ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague}}/>
       : view==="depth"
       ? <DepthChart {...{team:depthTeam,players,fc,fcName,pick,sel,onBack:()=>setView("player")}}/>
       : view==="trade"
@@ -568,8 +569,10 @@ function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){
   </div>);
 }
 function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch}){
+  const [showStats,setShowStats]=useState(false);
   const sigP=sigFor(sig,sel);
   const sigMeta=sig&&sig.meta;
+  useEffect(()=>setShowStats(false),[sel&&sel.player_id]);
   if(!sel) return (
     <div className="panel pad" style={{marginTop:12,textAlign:"center",padding:"42px 16px"}}>
       <div className="mono mut">no player loaded</div>
@@ -604,6 +607,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
               style={{cursor:"pointer",fontSize:18,color:watch&&watch.includes(sel.player_id)?"var(--warn)":"var(--faint)"}}>{watch&&watch.includes(sel.player_id)?"★":"☆"}</span></div>
           <div className="mono small mut" style={{marginTop:4}}>
             <span style={{color:POS[sel.position]}}>{sel.position}</span> · <span onClick={()=>openDepth(sel.team)} style={{cursor:"pointer",color:"var(--wr)",textDecoration:"underline dotted",textUnderlineOffset:3}}>{sel.team}</span> · {age?age.toFixed(1)+"y":"age n/a"} · yoe {sel.years_exp??"—"}
+            <span onClick={()=>setShowStats(v=>!v)} style={{cursor:"pointer",color:showStats?"var(--wr)":"var(--mut)",textDecoration:"underline dotted",textUnderlineOffset:3}}> · stats {showStats?"▴":"▾"}</span>
             {sel.injury_status?<span className="err"> · {sel.injury_status}</span>:""}
           </div>
         </div>
@@ -614,6 +618,8 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
         </div>
       </div>
     </div>
+
+    {showStats && <StatHistory sel={sel}/>}
 
     {/* value metrics */}
     {(fn==="val"||fn==="mkt") && (
@@ -731,7 +737,6 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
       </div>
     )}
     {fn==="comp" && !(sigP&&sigP.comps&&sigP.comps.length>0) && <div className="stub" style={{marginTop:12}}><b>comps</b> — no profile for {sel.full_name} (needs a recent qualifying season)</div>}
-    {fn==="stat" && <StatHistory sel={sel}/>}
     {fn==="news" && <PlayerNews sel={sel}/>}
     {fn==="sim" && <div className="stub" style={{marginTop:12}}><b>season sim</b> — chunk 3 · monte-carlo over your synced schedule + rosters</div>}
   </div>);
@@ -768,8 +773,21 @@ function RevealedValues({league,fc,players}){
         </div>)}
   </div>);
 }
-function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,players,pick,setMyTeam,myLeague}){
+function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague}){
   const mineHere=myLeague&&league&&myLeague.leagueId===league.league_id;
+  const [inspectRid,setInspectRid]=useState(null);
+  const seasonOptions=[2026,2025,2024,2023,2022,2021,2020];
+  const viewTeams=league&&teams
+    ? teams.map(t=>({...t,playerIds:t.players||t.playerIds||[],source:"live"}))
+    : (myLeague&&players?myLeague.teams.map(t=>{
+        const pls=t.playerIds||[];
+        const val=fc?pls.reduce((s,pid)=>s+((fcVal(fc,fcName,players[pid])||{}).value||0),0):null;
+        return {...t,players:pls,playerIds:pls,val,source:"saved"};
+      }):null);
+  const viewLeagueName=league?league.name:(myLeague&&myLeague.leagueName);
+  const selected=viewTeams&&viewTeams.find(t=>t.rid===inspectRid);
+  const resolve=ids=>(ids||[]).map(id=>players&&players[id]).filter(Boolean);
+  const roster=selected?resolve(selected.playerIds).sort((a,b)=>((fcVal(fc,fcName,b)||{}).value||0)-((fcVal(fc,fcName,a)||{}).value||0)):[];
   return (
   <div style={{marginTop:12}}>
     <div className="panel pad">
@@ -777,11 +795,14 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         <input className="field" placeholder="sleeper username" value={uname} onChange={e=>setUname(e.target.value)}
           onKeyDown={e=>e.key==="Enter"&&syncLeagues()} style={{flex:"1 1 200px"}}/>
-        <input className="field" value={season} onChange={e=>setSeason(e.target.value)} style={{width:90}}/>
+        <select className="field" value={season} onChange={e=>setSeason(e.target.value)} style={{width:104}}>
+          {seasonOptions.map(y=><option key={y} value={String(y)}>{y}</option>)}
+        </select>
         <button className="btn" onClick={syncLeagues}>sync</button>
       </div>
       {lStatus && <div className="note">{lStatus}</div>}
       {!fc && <div className="note">note: roster strength needs the values source (currently unreachable here) — team list + records still load from Sleeper.</div>}
+      {myLeague&&!league&&!leagues&&<div className="note">loaded from saved league: <span className="mono" style={{color:"var(--wr)"}}>{myLeague.leagueName}</span>. sync above to switch leagues or seasons.</div>}
     </div>
 
     {leagues && !league &&
@@ -795,31 +816,41 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
         ))}
       </div>}
 
-    {league && teams &&
+    {viewTeams &&
       <div style={{marginTop:12}}>
         <div className="head" style={{marginBottom:8}}>
-          <div className="mono mut small">{league.name} · {fc?"power ranking by roster value":"by record"}</div>
-          <button className="btn" onClick={()=>loadLeague(null)||window.location.reload()} style={{display:"none"}}></button>
+          <div className="mono mut small">{viewLeagueName} · {fc?"power ranking by roster value":"by record"} · click a team for roster</div>
+          {league&&<button className="btn" onClick={()=>{loadLeague(null);setInspectRid(null);}}>change league</button>}
         </div>
         <div className="row" style={{gridTemplateColumns:"1fr"}}>
-          {teams.map((t,i)=>{
-            const max=fc?Math.max(...teams.map(x=>x.val)):1;
-            const isMine=mineHere&&myLeague.myRosterId===t.rid;
+          {viewTeams.map((t,i)=>{
+            const max=fc?(Math.max(...viewTeams.map(x=>x.val||0))||1):1;
+            const isMine=(myLeague&&myLeague.myRosterId===t.rid);
+            const isOpen=inspectRid===t.rid;
             return (
-            <div key={t.rid} className="teamcard" style={{cursor:"default",borderColor:isMine?"var(--buy)":undefined,background:isMine?"rgba(126,231,135,.06)":undefined}}>
+            <div key={t.rid} className="teamcard" onClick={()=>setInspectRid(isOpen?null:t.rid)}
+              style={{cursor:"pointer",borderColor:isOpen?"var(--wr)":isMine?"var(--buy)":undefined,background:isMine?"rgba(126,231,135,.06)":undefined}}>
               <span className="rk">{i+1}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:500,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{t.name}{isMine&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> ★ my team</span>}</div>
-                <div className="mono small mut">{t.w}-{t.l} · {t.players.length} players</div>
+                <div className="mono small mut">{t.w}-{t.l} · {(t.playerIds||[]).length} players{isOpen?" · roster open":""}</div>
                 {fc && <div className="bar" style={{marginTop:6}}><div style={{width:(t.val/max*100)+"%",background:"var(--wr)"}}></div></div>}
               </div>
               {fc && <span className="mono" style={{color:"var(--wr)",fontWeight:500}}>{fmt(t.val)}</span>}
-              <span className={"toggle"+(isMine?" on":"")} style={{whiteSpace:"nowrap"}} onClick={()=>setMyTeam(t.rid)}>{isMine?"saved":"this is me"}</span>
+              {league&&<span className={"toggle"+(isMine?" on":"")} style={{whiteSpace:"nowrap"}} onClick={e=>{e.stopPropagation();setMyTeam(t.rid);}}>{isMine?"saved":"this is me"}</span>}
             </div>);
           })}
         </div>
-        <div className="note">{mineHere?"your team is saved — head to the trd tab to build trades and get target suggestions.":"tap \"this is me\" on your team to save it, then the trade terminal can suggest targets from this league."}</div>
-        {fc && <RevealedValues league={league} fc={fc} players={players}/>}
+        {selected&&<div className="panel pad" style={{marginTop:12}}>
+          <div className="head" style={{marginBottom:8}}><div className="lbl">{selected.name} · roster</div><div className="mono small mut">{roster.length} players</div></div>
+          {roster.map(p=>{const v=fcVal(fc,fcName,p);return(
+            <div key={p.player_id} onClick={()=>pick(p)} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid var(--line)",cursor:"pointer"}}>
+              <PosChip pos={p.position}/><span style={{flex:1,fontSize:13}}>{p.full_name}</span>
+              <span className="mono small mut">{fmt(v&&v.value)}</span><span className="mono faint" style={{fontSize:10}}>↗</span>
+            </div>);})}
+        </div>}
+        <div className="note">{myLeague?"your league is saved — use trd to build trades, or click any manager here to inspect their roster.":"tap \"this is me\" on your team to save it, then the trade terminal can suggest targets from this league."}</div>
+        {fc && league && <RevealedValues league={league} fc={fc} players={players}/>}
       </div>}
   </div>);
 }
@@ -961,6 +992,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const [get,setGet]=useState([]);const [give,setGive]=useState([]);
   const [q,setQ]=useState("");const [qside,setQside]=useState("get");
   const [tgtPos,setTgtPos]=useState("ALL");const [tgtSort,setTgtSort]=useState("buy");
+  const [browseRid,setBrowseRid]=useState(null);
   // verdict basis: market (FantasyCalc) vs revealed (this league's solved trades); + contention window
   const [valMode,setValMode]=useState("market");const [windowMode,setWindowMode]=useState("balanced");
   const [revealed,setRevealed]=useState(null);const [revStatus,setRevStatus]=useState("");
@@ -987,6 +1019,9 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const resolve=ids=>(ids||[]).map(id=>players&&players[id]).filter(Boolean);
   const myTeam=mine?myLeague.teams.find(t=>t.rid===myLeague.myRosterId):null;
   const myPlayers=myTeam?resolve(myTeam.playerIds).sort((a,b)=>valOf(b)-valOf(a)):[];
+  const otherTeams=mine?myLeague.teams.filter(t=>t.rid!==myLeague.myRosterId):[];
+  const browseTeam=(browseRid&&otherTeams.find(t=>t.rid===browseRid))||otherTeams[0]||null;
+  const browsePlayers=browseTeam?resolve(browseTeam.playerIds).sort((a,b)=>valOf(b)-valOf(a)):[];
   const pool=mine?myLeague.teams.filter(t=>t.rid!==myLeague.myRosterId).flatMap(t=>resolve(t.playerIds).map(p=>({p,owner:t.name}))):[];
   const posSum=pls=>{const s={QB:0,RB:0,WR:0,TE:0};pls.forEach(p=>{if(s[p.position]!=null)s[p.position]+=valOf(p);});return s;};
   const myS=posSum(myPlayers);
@@ -1070,6 +1105,29 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
       <div className="note">{ownedPicks
         ?"your owned picks, auto-derived from Sleeper's traded-pick ledger and scaled for your format. values are flat dynasty estimates (not slotted by standings)."
         :"pick values are dynasty estimates — sync your league (lg) to auto-derive your exact owned picks from Sleeper."}</div>
+    </div>}
+
+    {mine && otherTeams.length>0 && <div className="panel pad" style={{marginTop:12}}>
+      <div className="head" style={{marginBottom:8}}>
+        <div className="lbl">browse trade partners</div>
+        <div className="mono small mut">{browseTeam?browseTeam.name:"select a team"}</div>
+      </div>
+      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
+        {otherTeams.map(t=>(
+          <span key={t.rid} className={"toggle"+((browseTeam&&browseTeam.rid===t.rid)?" on":"")} onClick={()=>setBrowseRid(t.rid)}
+            style={{maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</span>
+        ))}
+      </div>
+      {browseTeam&&<div>
+        {browsePlayers.slice(0,24).map(p=>{const fl=sigFlag(sig,p);const added=has(get,p);return(
+          <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1}}>
+            <PosChip pos={p.position}/>
+            <span style={{flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.full_name}{fl==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}</span>
+            <span className="mono small mut">{fmt(valOf(p))}</span>
+            <span className="mono" style={{color:"var(--wr)",fontSize:11}}>+ get</span>
+          </div>);})}
+      </div>}
+      <div className="note">click another manager, then click a player to add them to {lblGet}. sorted by current format value.</div>
     </div>}
 
     {mine && <div className="panel pad" style={{marginTop:12}}>
