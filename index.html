@@ -838,8 +838,13 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const targets=(mode==="fit"&&weak.length?ranked.filter(x=>weak.includes(x.p.position)):ranked).slice(0,6);
 
   const sumG=get.reduce((s,i)=>s+valOf(i),0),sumGv=give.reduce((s,i)=>s+valOf(i),0);
-  const adj=(sum,c,oc)=>c>oc?sum*(1-0.04*(c-oc)):sum;
-  const aG=adj(sumG,get.length,give.length),aGv=adj(sumGv,give.length,get.length);
+  // consolidation tax: only REAL roster bodies create roster-spot pressure — exclude picks
+  // (they don't occupy active spots) and throw-ins (<10% of the trade's top piece). 4% per
+  // extra real body on the heavier side, capped at 4 bodies (16%). Gentle nudge, not gospel.
+  const topPiece=Math.max(1,...get.concat(give).filter(it=>!it.pick).map(valOf));
+  const realBodies=list=>list.filter(it=>!it.pick&&valOf(it)>=0.10*topPiece).length;
+  const adj=(sum,c,oc)=>{const x=Math.min(4,Math.max(0,c-oc));return x?sum*(1-0.04*x):sum;};
+  const aG=adj(sumG,realBodies(get),realBodies(give)),aGv=adj(sumGv,realBodies(give),realBodies(get));
   const diff=aGv-aG;const tot=Math.max(aG,aGv,1);
   const verdict=!get.length||!give.length?"build a trade":Math.abs(diff)/tot<0.08?"fair":diff>0?"you win value":"you overpay";
   const lblGet=mine?"I get":"side A",lblGive=mine?"I give":"side B";
@@ -929,7 +934,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
         <span className="mono small mut" style={{width:64}}>{lblGet} {fmt(aG)}</span>
         <div className="bar" style={{flex:1}}><div style={{width:(aG/(aG+aGv)*100)+"%",background:"var(--wr)"}}></div></div>
         <span className="mono small mut" style={{width:64,textAlign:"right"}}>{fmt(aGv)} {lblGive}</span></div>}
-      <div className="note">FantasyCalc values at your format, with a roster-spot tax (4%/extra body) for consolidation. The buy signal currently tilts target suggestions, not the verdict. Roadmap: fold in the league's revealed-preference values (lg tab) and a contention-window weighting.</div>
+      <div className="note">FantasyCalc values at your format, with a roster-spot tax for consolidation (4%/extra rosterable body — picks &amp; throw-ins excluded, capped). The buy signal currently tilts target suggestions, not the verdict. Roadmap: fold in the league's revealed-preference values (lg tab) and a contention-window weighting.</div>
     </div>
   </div>);
 }
