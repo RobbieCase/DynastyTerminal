@@ -99,6 +99,50 @@ def pull_nflverse(seasons):
         out = ay if out is None else out.merge(ay, on=["season", "week", "nkey"], how="outer")
     return out
 
+ROSTER_CANDIDATES = [
+    "https://github.com/nflverse/nflverse-data/releases/download/rosters/roster_{year}.parquet",
+    "https://github.com/nflverse/nflverse-data/releases/download/rosters/rosters_{year}.parquet",
+]
+
+def pull_roster_ages(seasons):
+    """Per-season player ages (nflverse rosters), keyed (season, nkey) for the aging fit.
+    Uses an `age` column when present, else derives it from `birth_date` at Sept 1.
+    Returns None on failure (Action-only release assets)."""
+    sess = requests.Session(); sess.headers.update(UA)
+    def parquet(url):
+        try:
+            r = sess.get(url, timeout=60)
+            return pd.read_parquet(io.BytesIO(r.content)) if r.status_code == 200 else None
+        except Exception:
+            return None
+    parts = []
+    for y in seasons:
+        rd = None
+        for tmpl in ROSTER_CANDIDATES:
+            rd = parquet(tmpl.format(year=y))
+            if rd is not None and len(rd):
+                break
+        if rd is None:
+            print(f"  rosters {y}: no candidate fetched"); continue
+        cols = set(rd.columns)
+        nm = next((c for c in ("full_name", "player_name", "player_display_name") if c in cols), None)
+        if nm is None:
+            print(f"  rosters {y}: no name column; have {sorted(cols)[:8]}"); continue
+        d = rd.copy(); d["nkey"] = d[nm].map(_norm); d["season"] = y
+        if "age" in cols and pd.to_numeric(d["age"], errors="coerce").notna().any():
+            d["age"] = pd.to_numeric(d["age"], errors="coerce")
+        elif "birth_date" in cols:
+            bd = pd.to_datetime(d["birth_date"], errors="coerce")
+            d["age"] = (pd.Timestamp(year=y, month=9, day=1) - bd).dt.days / 365.25
+        else:
+            print(f"  rosters {y}: no age/birth_date col"); continue
+        sub = d[["season", "nkey", "age"]].dropna(subset=["age"])
+        if len(sub):
+            parts.append(sub); print(f"  rosters {y}: {len(sub)} ages")
+    if not parts:
+        return None
+    return pd.concat(parts, ignore_index=True).groupby(["season", "nkey"], as_index=False).age.max()
+
 def pull_weekly(seasons, positions=("QB", "RB", "WR", "TE"), max_week=18, workers=16, with_nflverse=True):
     sess = requests.Session(); sess.headers.update(UA)
     def grab(job):

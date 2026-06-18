@@ -1,7 +1,7 @@
 """Run the spine: pull -> features -> backtest -> broad feed (+usage detail +comps) -> signal.json."""
 import json, os, numpy as np, pandas as pd
 from sklearn.neighbors import NearestNeighbors
-from gridiron_spine import data, features, backtest, trade_solve
+from gridiron_spine import data, features, backtest, trade_solve, aging
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATA = os.path.join(ROOT, "data")
@@ -27,6 +27,23 @@ def comps_for(feed_df, k=4):
                 for j in nbrs[1:]]
     return out
 
+def fit_aging(df):
+    """Build per-season PPG by player, join nflverse ages, fit aging curves. {} if no ages."""
+    ages = data.pull_roster_ages(SEASONS)
+    if ages is None or not len(ages):
+        print("aging: no roster ages available — frontend keeps the hand-coded curve")
+        return {}
+    career = (df.groupby(["PlayerId", "season", "pos"], as_index=False)
+                .agg(ppg=("TotalPoints", "mean"), name=("PlayerName", "last"), games=("week", "nunique")))
+    career = career[career.games >= 4].copy()
+    career["nkey"] = career.name.map(data._norm)
+    career = career.merge(ages, on=["season", "nkey"], how="left").dropna(subset=["age"])
+    career = career.rename(columns={"PlayerId": "player"})
+    curves = aging.fit_age_curves(career[["player", "pos", "season", "age", "ppg"]])
+    for pos, c in curves.items():
+        print(f"aging: {pos} peak {c['peak']}y · n={c['n']} · mult@30={c['mult'].get(30,'-')} · surv@30={c['surv'].get(30,'-')}")
+    return curves
+
 def main():
     print("pulling weekly opportunity data (QB/RB/WR/TE)…")
     df = data.pull_weekly(SEASONS)
@@ -45,11 +62,14 @@ def main():
     sv = trade_solve.synthetic_validate()
     print(f"trade-solve self-test: Spearman {sv['spearman']:.3f}")
 
+    age_curves = fit_aging(df)
+
     feed_df = features.build_feed(df)
     feed_df["q"] = feed_df.groupby("pos")["gap"].transform(lambda s: s.quantile(0.75))
     comps = comps_for(feed_df)
 
     feed = {"meta": {"built_from": SEASONS, "backtest": rep, "trade_solve_selftest": sv,
+                     "age_curves": age_curves,
                      "note": "join to Sleeper via players[].espn_id == key"},
             "players": {}}
     by_pos = {}
