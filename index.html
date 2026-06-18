@@ -1130,7 +1130,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
           <div style={{flex:1,minWidth:0}}>
             <div>{p.full_name}{sg&&sg.flag==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}
               <span className="mut mono" onClick={e=>{e.stopPropagation();setBrowseRid(browseRid===ownerRid?null:ownerRid);}}
-                style={{fontSize:10,cursor:"pointer",color:browseRid===ownerRid?"var(--wr)":"var(--mut)"}}> · {owner} roster {browseRid===ownerRid?"▴":"▾"}</span></div>
+                style={{fontSize:10,cursor:"pointer",color:browseRid===ownerRid?"var(--wr)":"var(--mut)"}}> · {owner} {browseRid===ownerRid?"▴":"›"}</span></div>
             <div className="mono faint" style={{fontSize:10,marginTop:2}}>
               {sg?`gap ${sg.gap>=0?"+":""}${sg.gap}`:"no signal"}
               {sg&&sg.snap!=null?` · snap ${Math.round(sg.snap*100)}%`:""}
