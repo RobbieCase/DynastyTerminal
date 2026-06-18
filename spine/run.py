@@ -27,22 +27,23 @@ def comps_for(feed_df, k=4):
                 for j in nbrs[1:]]
     return out
 
-def fit_aging(df):
-    """Build per-season PPG by player, join nflverse ages, fit aging curves. {} if no ages."""
-    ages = data.pull_roster_ages(SEASONS)
-    if ages is None or not len(ages):
-        print("aging: no roster ages available — frontend keeps the hand-coded curve")
+AGING_SEASONS = list(range(2010, 2026))   # deep nflverse window (hvpkod only goes to 2021)
+
+def fit_aging():
+    """Fit aging survival curves on a DEEP fantasy-points history (nflverse), joined to
+    per-season ages. Decoupled from the 2021+ hvpkod window so long careers are observed."""
+    hist = data.pull_fantasy_history(AGING_SEASONS)
+    ages = data.pull_roster_ages(AGING_SEASONS)
+    if hist is None or ages is None or not len(hist) or not len(ages):
+        print("aging: history/ages unavailable — frontend keeps the hand-coded curve")
         return {}
-    career = (df.groupby(["PlayerId", "season", "pos"], as_index=False)
-                .agg(ppg=("TotalPoints", "mean"), name=("PlayerName", "last"), games=("week", "nunique")))
-    career = career[career.games >= 4].copy()
-    career["nkey"] = career.name.map(data._norm)
-    career = career.merge(ages, on=["season", "nkey"], how="left").dropna(subset=["age"])
-    career = career.rename(columns={"PlayerId": "player"})
+    career = (hist[hist.games >= 4]
+                .merge(ages, on=["season", "nkey"], how="left").dropna(subset=["age"])
+                .rename(columns={"nkey": "player"}))
     curves = aging.fit_age_curves(career[["player", "pos", "season", "age", "ppg"]])
     for pos, c in curves.items():
         s = c["surv"]
-        print(f"aging: {pos} n={c['n']} · survival P(relevant) @27={s.get(27,'-')} @30={s.get(30,'-')} @33={s.get(33,'-')}")
+        print(f"aging: {pos} n={c['n']} · survival P(relevant) @27={s.get(27,'-')} @30={s.get(30,'-')} @33={s.get(33,'-')} @36={s.get(36,'-')}")
     return curves
 
 def main():
@@ -63,7 +64,7 @@ def main():
     sv = trade_solve.synthetic_validate()
     print(f"trade-solve self-test: Spearman {sv['spearman']:.3f}")
 
-    age_curves = fit_aging(df)
+    age_curves = fit_aging()
 
     feed_df = features.build_feed(df)
     feed_df["q"] = feed_df.groupby("pos")["gap"].transform(lambda s: s.quantile(0.75))

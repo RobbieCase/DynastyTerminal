@@ -143,6 +143,46 @@ def pull_roster_ages(seasons):
         return None
     return pd.concat(parts, ignore_index=True).groupby(["season", "nkey"], as_index=False).age.max()
 
+def pull_fantasy_history(seasons):
+    """Per-season fantasy PPG by player from nflverse stats_player_week — DEEP history for
+    the aging fit, independent of the 2021+ hvpkod usage window. Returns a DataFrame
+    [player(nkey), pos, season, ppg, games] or None. Action-only release assets."""
+    sess = requests.Session(); sess.headers.update(UA)
+    def parquet(url):
+        try:
+            r = sess.get(url, timeout=60)
+            return pd.read_parquet(io.BytesIO(r.content)) if r.status_code == 200 else None
+        except Exception:
+            return None
+    parts = []
+    for y in seasons:
+        ps = None
+        for tmpl in PLAYER_STATS_CANDIDATES:
+            ps = parquet(tmpl.format(year=y))
+            if ps is not None and len(ps):
+                break
+        if ps is None:
+            continue
+        cols = set(ps.columns)
+        nm = next((c for c in ("player_display_name", "player_name") if c in cols), None)
+        fp = next((c for c in ("fantasy_points_ppr", "fantasy_points") if c in cols), None)
+        if nm is None or fp is None or "position" not in cols or not {"season", "week"} <= cols:
+            continue
+        p = ps.copy()
+        if "season_type" in cols:
+            p = p[p.season_type.astype(str).str.upper().str.startswith("REG")]
+        p = p[p.position.isin(["QB", "RB", "WR", "TE"])]
+        p["nkey"] = p[nm].map(_norm)
+        p["fp"] = pd.to_numeric(p[fp], errors="coerce")
+        g = (p.groupby(["nkey", "position", "season"], as_index=False)
+               .agg(ppg=("fp", "mean"), games=("week", "nunique")).rename(columns={"position": "pos"}))
+        parts.append(g)
+    if not parts:
+        return None
+    out = pd.concat(parts, ignore_index=True)
+    print(f"  fantasy history: {len(out):,} player-seasons over {out.season.min()}–{out.season.max()}")
+    return out
+
 def pull_weekly(seasons, positions=("QB", "RB", "WR", "TE"), max_week=18, workers=16, with_nflverse=True):
     sess = requests.Session(); sess.headers.update(UA)
     def grab(job):
