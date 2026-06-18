@@ -166,6 +166,10 @@ function App(){
   const [lStatus,setLStatus]=useState("");
   const [myLeague,setMyLeague]=useState(null);
   useEffect(()=>{try{const s=localStorage.getItem("dwr_myleague");if(s)setMyLeague(JSON.parse(s));}catch(e){}},[]);
+  // watchlist (player_ids) — the moat clock made personal
+  const [watch,setWatch]=useState([]);
+  useEffect(()=>{try{const s=localStorage.getItem("dwr_watchlist");if(s)setWatch(JSON.parse(s));}catch(e){}},[]);
+  const toggleWatch=id=>setWatch(prev=>{const next=prev.includes(id)?prev.filter(x=>x!==id):[...prev,id];try{localStorage.setItem("dwr_watchlist",JSON.stringify(next));}catch(e){}return next;});
   const idx=useRef([]);
 
   useEffect(()=>{(async()=>{
@@ -268,6 +272,7 @@ function App(){
         <span key={k} className={"tab"+(view==="player"&&fn===k?" on":"")} onClick={()=>{setFn(k);setView("player");}}><b>{k}</b> {d}</span>
       ))}
       <span className={"tab"+(view==="scr"?" on":"")} onClick={()=>setView("scr")}><b>scr</b> screener</span>
+      <span className={"tab"+(view==="watch"?" on":"")} onClick={()=>setView("watch")}><b>wl</b> watchlist{watch.length?` ·${watch.length}`:""}</span>
       <span className={"tab"+(view==="trade"?" on":"")} onClick={()=>setView("trade")}><b>trd</b> trade</span>
       <span className={"tab"+(view==="sim"?" on":"")} onClick={()=>setView("sim")}><b>sim</b> season</span>
       <span className={"tab"+(view==="tut"?" on":"")} onClick={()=>setView("tut")}><b>?</b> guide</span>
@@ -312,9 +317,11 @@ function App(){
       ? <SimTerminal {...{league,teams,fc}}/>
       : view==="scr"
       ? <Screener {...{players,fc,fcName,sig,set,pick}}/>
+      : view==="watch"
+      ? <WatchlistView {...{watch,players,fc,fcName,sig,set,pick,toggleWatch}}/>
       : view==="tut"
       ? <Tutorial/>
-      : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}}/>}
+      : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch}}/>}
 
     <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
       live now: Sleeper data + league sync, the trending wire, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
@@ -422,7 +429,56 @@ function PriceHistory({sel,set}){
     <div className="note">self-accumulated daily FantasyCalc snapshots — the value time-series that can't be backfilled. grows one row per day the spine runs.</div>
   </div>);
 }
-function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}){
+function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){
+  const [snaps,setSnaps]=useState(null);
+  useEffect(()=>{let dead=false;loadValueSeries().then(s=>{if(!dead)setSnaps(s);});return ()=>{dead=true;};},[]);
+  const label=set.sf?"dyn_sf_ppr_12":"dyn_1qb_ppr_12";
+  const GRID="minmax(140px,1.6fr) 74px 62px 60px 92px 26px";
+  const rows=useMemo(()=>{
+    if(!players)return [];
+    return watch.map(id=>{
+      const p=players[id]; if(!p)return null;
+      const v=fcVal(fc,fcName,p), market=v?v.value:null, trend=v?(v.trend30Day||0):null;
+      const sg=sigFor(sig,p), age=ageFrom(p.birth_date);
+      const {intrinsic,edge}=intrinsicOf(market,trend,p.position,age,sg?sg.gap:null);
+      let series=[],delta=null;
+      if(snaps){series=snaps.map(s=>{const o=s.sets&&s.sets[label]&&s.sets[label][id];return o?o.v:null;}).filter(x=>x!=null);
+        if(series.length>=2)delta=series[series.length-1]-series[0];}
+      return {id,p,market,edge,gap:sg?sg.gap:null,flag:sg?sg.flag:null,delta};
+    }).filter(Boolean).sort((a,b)=>(b.edge==null?-1e9:b.edge)-(a.edge==null?-1e9:a.edge));
+  },[watch,players,fc,fcName,sig,snaps,label]);
+
+  if(!watch.length) return (
+    <div className="panel pad" style={{marginTop:12,textAlign:"center",padding:"40px 16px"}}>
+      <div className="mono mut">watchlist empty</div>
+      <div className="note">open any player and tap ☆ next to their name to track them. this board shows each tracked player's edge, usage gap, and how their stored value has moved — the value time-series, made personal.</div>
+    </div>);
+  return (
+  <div style={{marginTop:12}}>
+    <div className="panel" style={{overflowX:"auto"}}>
+      <div style={{minWidth:540}}>
+        <div style={{display:"grid",gridTemplateColumns:GRID,gap:8,padding:"10px 14px",borderBottom:"1px solid var(--line2)"}}>
+          <span className="lbl">player · {watch.length} tracked</span><span className="lbl" style={{textAlign:"right"}}>value</span>
+          <span className="lbl" style={{textAlign:"right"}}>edge</span><span className="lbl" style={{textAlign:"right"}}>gap</span>
+          <span className="lbl" style={{textAlign:"right"}}>since tracked</span><span></span>
+        </div>
+        {rows.map(r=>(
+          <div key={r.id} style={{display:"grid",gridTemplateColumns:GRID,gap:8,padding:"8px 14px",alignItems:"center",borderBottom:"1px solid var(--line)"}}>
+            <span style={{display:"flex",alignItems:"center",gap:7,minWidth:0,cursor:"pointer"}} onClick={()=>pick(r.p)}>
+              <PosChip pos={r.p.position}/><span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{r.p.full_name}</span>
+              {r.flag==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}>buy</span>}</span>
+            <span className="mono small" style={{textAlign:"right"}}>{fmt(r.market)}</span>
+            <span className="mono small" style={{textAlign:"right",color:r.edge==null?"var(--faint)":r.edge>3?"var(--buy)":r.edge<-3?"var(--sell)":"var(--mut)"}}>{r.edge!=null?(r.edge>=0?"+":"")+r.edge.toFixed(1)+"%":"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:r.gap==null?"var(--faint)":r.gap>0?"var(--buy)":"var(--mut)"}}>{r.gap!=null?(r.gap>=0?"+":"")+r.gap:"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:r.delta==null?"var(--faint)":r.delta>=0?"var(--buy)":"var(--sell)"}}>{r.delta==null?(snaps?"flat":"…"):(r.delta>=0?"▲ ":"▼ ")+fmt(Math.abs(r.delta))}</span>
+            <span onClick={()=>toggleWatch(r.id)} style={{cursor:"pointer",color:"var(--warn)",textAlign:"right"}} title="remove">★</span>
+          </div>))}
+      </div>
+    </div>
+    <div className="note">edge &amp; gap from the live signal; "since tracked" is the change in stored daily value (12-tm {set.sf?"SF":"1QB"} PPR) across the snapshots accumulated so far. tap ★ to remove, or a name to open it.</div>
+  </div>);
+}
+function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch}){
   const sigP=sigFor(sig,sel);
   const sigMeta=sig&&sig.meta;
   if(!sel) return (
@@ -454,7 +510,9 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
     <div className="panel pad" style={{marginTop:12}}>
       <div className="head">
         <div>
-          <div style={{fontSize:22,fontWeight:600}}>{sel.full_name}</div>
+          <div style={{fontSize:22,fontWeight:600,display:"flex",alignItems:"center",gap:9}}>{sel.full_name}
+            <span onClick={()=>toggleWatch&&toggleWatch(sel.player_id)} title={watch&&watch.includes(sel.player_id)?"remove from watchlist":"add to watchlist"}
+              style={{cursor:"pointer",fontSize:18,color:watch&&watch.includes(sel.player_id)?"var(--warn)":"var(--faint)"}}>{watch&&watch.includes(sel.player_id)?"★":"☆"}</span></div>
           <div className="mono small mut" style={{marginTop:4}}>
             <span style={{color:POS[sel.position]}}>{sel.position}</span> · <span onClick={()=>openDepth(sel.team)} style={{cursor:"pointer",color:"var(--wr)",textDecoration:"underline dotted",textUnderlineOffset:3}}>{sel.team}</span> · {age?age.toFixed(1)+"y":"age n/a"} · yoe {sel.years_exp??"—"}
             {sel.injury_status?<span className="err"> · {sel.injury_status}</span>:""}
