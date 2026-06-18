@@ -139,6 +139,33 @@ function norm(s){return (s||"").toLowerCase().replace(/[.'’`]/g,"").replace(/\
 function fcVal(byId,byName,p){if(!byId||!p)return null;if(byId[p.player_id])return byId[p.player_id];if(byName){const o=byName[norm(p.full_name)];if(o)return o;}return null;}
 function findSleeper(players,name,pos){if(!players)return null;const n=norm(name);for(const id in players){const p=players[id];if(p.position===pos&&p.full_name&&norm(p.full_name)===n)return p;}return null;}
 const USAGE_ROWS={QB:[["pass yds/g","pas"],["rush yds/g","rush"],["carries/g","car"]],RB:[["touches/g","tch"],["carries/g","car"],["rz tch/g","rz"]],WR:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]],TE:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]]};
+const ESPN_TEAM_ID={ARI:22,ATL:1,BAL:33,BUF:2,CAR:29,CHI:3,CIN:4,CLE:5,DAL:6,DEN:7,DET:8,GB:9,HOU:34,IND:11,JAX:30,JAC:30,KC:12,LAC:24,LAR:14,LA:14,LV:13,OAK:13,MIA:15,MIN:16,NE:17,NO:18,NYG:19,NYJ:20,PHI:21,PIT:23,SEA:26,SF:25,TB:27,TEN:10,WAS:28,WSH:28};
+const _espnDepthCache={};
+const _espnAthleteCache={};
+function loadEspnDepth(team,season){
+  const id=ESPN_TEAM_ID[team]; if(!id)return Promise.resolve(null);
+  const yr=season||"2026", key=`${yr}|${team}`;
+  if(_espnDepthCache[key])return _espnDepthCache[key];
+  _espnDepthCache[key]=(async()=>{try{
+    const d=await jget(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${yr}/teams/${id}/depthcharts?lang=en&region=us`);
+    return d&&d.items?d:null;
+  }catch(e){return null;}})();
+  return _espnDepthCache[key];
+}
+function espnAthleteId(ref){
+  const s=(ref&&ref.$ref)||ref||"", m=String(s).match(/athletes\/(\d+)/);
+  return m?m[1]:null;
+}
+function loadEspnAthlete(id,season){
+  if(!id)return Promise.resolve(null);
+  const yr=season||"2026", key=`${yr}|${id}`;
+  if(_espnAthleteCache[key])return _espnAthleteCache[key];
+  _espnAthleteCache[key]=(async()=>{try{
+    const d=await jget(`https://sports.core.api.espn.com/v2/sports/football/leagues/nfl/seasons/${yr}/athletes/${id}?lang=en&region=us`);
+    return d&&d.displayName?d:null;
+  }catch(e){return null;}})();
+  return _espnAthleteCache[key];
+}
 
 function App(){
   const [players,setPlayers]=useState(null);
@@ -321,7 +348,7 @@ function App(){
     {view==="league"
       ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague}}/>
       : view==="depth"
-      ? <DepthChart {...{team:depthTeam,players,fc,fcName,pick,sel,onBack:()=>setView("player")}}/>
+      ? <DepthChart {...{team:depthTeam,season:nflState&&nflState.season,players,fc,fcName,pick,sel,onBack:()=>setView("player")}}/>
       : view==="trade"
       ? <TradeTerminal {...{players,fc,fcName,sig,set,pick,myLeague}}/>
       : view==="sim"
@@ -351,7 +378,7 @@ function ThinMarket({sel,age}){
       </div>
       <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:11}}>
         <span className="chip">sleeper rank {sel.search_rank??"—"}</span>
-        {sel.depth_chart_order&&<span className="chip">depth #{sel.depth_chart_order}</span>}
+        {sel.team&&<span className="chip">ESPN depth</span>}
         <span className="chip">{sel.position} · {sel.team}</span>
         {age&&<span className="chip">{age.toFixed(1)}y</span>}
       </div>
@@ -359,9 +386,40 @@ function ThinMarket({sel,age}){
     </div>
   </div>);
 }
-function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
+function DepthChart({team,season,players,fc,fcName,pick,sel,onBack}){
   const CAP={QB:4,RB:6,WR:7,TE:4};
-  const g=useMemo(()=>{
+  const [espn,setEspn]=useState(undefined);
+  const [idMap,setIdMap]=useState(null);
+  const [athleteNames,setAthleteNames]=useState({});
+  useEffect(()=>{let dead=false;setEspn(undefined);
+    loadEspnDepth(team,season).then(d=>{if(!dead)setEspn(d||null);});
+    return ()=>{dead=true;};
+  },[team,season]);
+  useEffect(()=>{let dead=false;loadEspnIdMap().then(m=>{if(!dead)setIdMap(m||null);});return ()=>{dead=true;};},[]);
+  const sleeperByEspn=useMemo(()=>{
+    const out={}; if(!players)return out;
+    Object.values(players).forEach(p=>{
+      const n=norm(p.full_name), k=(p.position||"")+"|"+n;
+      const id=p.espn_id||(idMap&&((idMap.by_pos_name&&idMap.by_pos_name[k])||(idMap.by_name&&idMap.by_name[n])));
+      if(id)out[String(id)]=p;
+    });
+    return out;
+  },[players,idMap]);
+  const depthIds=useMemo(()=>{
+    const offense=espn&&espn.items&&espn.items.find(i=>i.positions&&i.positions.qb&&i.positions.wr);
+    if(!offense)return [];
+    return ["qb","rb","wr","te"].flatMap(k=>(((offense.positions[k]||{}).athletes)||[]).map(a=>espnAthleteId(a.athlete))).filter(Boolean);
+  },[espn]);
+  useEffect(()=>{let dead=false;
+    const missing=depthIds.filter(id=>!sleeperByEspn[id]&&!athleteNames[id]);
+    if(!missing.length)return;
+    Promise.all(missing.map(id=>loadEspnAthlete(id,season).then(a=>[id,a&&a.displayName]))).then(rows=>{
+      if(dead)return;
+      setAthleteNames(prev=>{const next={...prev};rows.forEach(([id,name])=>{if(name)next[id]=name;});return next;});
+    });
+    return ()=>{dead=true;};
+  },[depthIds.join(","),sleeperByEspn,athleteNames,season]);
+  const sleeperDepth=useMemo(()=>{
     const out={QB:[],RB:[],WR:[],TE:[]};
     if(!players||!team)return out;
     Object.values(players).forEach(p=>{if(p.team===team&&out[p.position])out[p.position].push(p);});
@@ -372,10 +430,25 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
     }));
     return out;
   },[team,players]);
+  const g=useMemo(()=>{
+    const out={QB:[],RB:[],WR:[],TE:[]};
+    const offense=espn&&espn.items&&espn.items.find(i=>i.positions&&i.positions.qb&&i.positions.wr);
+    if(!offense)return sleeperDepth;
+    [["QB","qb"],["RB","rb"],["WR","wr"],["TE","te"]].forEach(([pos,key])=>{
+      const bucket=offense.positions[key];
+      out[pos]=((bucket&&bucket.athletes)||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99)).map(a=>{
+        const id=espnAthleteId(a.athlete), p=sleeperByEspn[id];
+        const named=athleteNames[id], byName=named&&findSleeper(players,named,pos);
+        return p?{...p,_espnDepth:a.rank,_espnSlot:a.slot}:byName?{...byName,_espnDepth:a.rank,_espnSlot:a.slot}:{player_id:`espn-${id}`,full_name:named||`ESPN athlete ${id}`,position:pos,team,_espnDepth:a.rank,_espnSlot:a.slot};
+      });
+    });
+    return out;
+  },[espn,sleeperDepth,sleeperByEspn,athleteNames,players,team]);
+  const source=espn&&espn.items?"ESPN":"Sleeper fallback";
   return (
   <div style={{marginTop:12}}>
     <div className="head" style={{marginBottom:10}}>
-      <div className="mono mut small">depth chart · <span style={{color:"var(--wr)",fontWeight:500}}>{team}</span> · skill positions</div>
+      <div className="mono mut small">depth chart · <span style={{color:"var(--wr)",fontWeight:500}}>{team}</span> · skill positions · {espn===undefined?"loading ESPN…":source}</div>
       <button className="btn" onClick={onBack}>‹ back to player</button>
     </div>
     <div className="row" style={{gridTemplateColumns:"repeat(auto-fit,minmax(165px,1fr))"}}>
@@ -388,7 +461,7 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
             <div key={p.player_id} onClick={()=>pick(p)}
               style={{display:"flex",alignItems:"baseline",gap:8,padding:"6px 0",cursor:"pointer",
                 borderBottom:i<Math.min(CAP[pos],g[pos].length)-1?"1px solid var(--line)":"none"}}>
-              <span className="mono small faint" style={{width:14}}>{i+1}</span>
+              <span className="mono small faint" style={{width:14}}>{p._espnDepth||i+1}</span>
               <div style={{flex:1,minWidth:0}}>
                 <div style={{fontWeight:me?600:400,color:me?"var(--wr)":"var(--tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{p.full_name}</div>
                 <div className="mono faint" style={{fontSize:10}}>{a?a.toFixed(1)+"y":""}{p.injury_status?" · "+p.injury_status:""}</div>
@@ -400,7 +473,7 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
         </div>
       ))}
     </div>
-    <div className="note">built from live Sleeper depth-chart order; values via the same id+name join. click any name to load it. ordering reflects Sleeper's posted depth, not a projection.</div>
+    <div className="note">built from ESPN's team depth chart when available, matched back to Sleeper by ESPN athlete id for values and player pages. if ESPN is unreachable, DWR falls back to Sleeper depth-chart order.</div>
   </div>);
 }
 function PriceHistory({sel,set}){
@@ -682,7 +755,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
           </div>
         </div>
         <div style={{display:"flex",gap:7,flexWrap:"wrap"}}>
-          {sel.depth_chart_order&&<span className="chip" onClick={()=>openDepth(sel.team)} style={{cursor:"pointer",borderColor:"var(--line2)"}}>depth #{sel.depth_chart_order} ↗</span>}
+          {sel.team&&<span className="chip" onClick={()=>openDepth(sel.team)} style={{cursor:"pointer",borderColor:"var(--line2)"}}>ESPN depth ↗</span>}
           {sel.height&&<span className="chip">{sel.height}" {sel.weight}lb</span>}
           {sel.college&&<span className="chip">{sel.college}</span>}
         </div>
