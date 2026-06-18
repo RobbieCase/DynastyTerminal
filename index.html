@@ -467,6 +467,17 @@ function NewsItem({a}){
 }
 // ESPN athlete stats — year-by-year, keyed by espn_id (which Sleeper provides), client-side.
 const _statCache={};
+let _espnIdMapPromise=null;
+function loadEspnIdMap(){
+  if(!_espnIdMapPromise)_espnIdMapPromise=fetch("./data/espn_ids.json").then(r=>r.ok?r.json():null).catch(()=>null);
+  return _espnIdMapPromise;
+}
+async function resolveEspnId(p){
+  if(p&&p.espn_id)return String(p.espn_id);
+  const m=await loadEspnIdMap(); if(!m||!p)return null;
+  const n=norm(p.full_name), k=(p.position||"")+"|"+n;
+  return (m.by_pos_name&&m.by_pos_name[k])||(m.by_name&&m.by_name[n])||null;
+}
 function loadPlayerStats(espnId){
   if(!espnId)return Promise.resolve(null);
   if(_statCache[espnId])return _statCache[espnId];
@@ -479,9 +490,13 @@ function loadPlayerStats(espnId){
 const CAT_BY_POS={QB:["passing","rushing"],RB:["rushing","receiving"],WR:["receiving","rushing"],TE:["receiving"]};
 function StatHistory({sel}){
   const [cats,setCats]=useState(undefined);
-  useEffect(()=>{let dead=false;setCats(undefined);loadPlayerStats(sel.espn_id).then(c=>{if(!dead)setCats(c);});return ()=>{dead=true;};},[sel.espn_id]);
-  if(!sel.espn_id)return <div className="stub" style={{marginTop:12}}>no ESPN id for this player — stat history unavailable.</div>;
+  const [resolvedId,setResolvedId]=useState(null);
+  useEffect(()=>{let dead=false;setCats(undefined);setResolvedId(null);
+    resolveEspnId(sel).then(id=>{if(dead)return;setResolvedId(id);return loadPlayerStats(id);})
+      .then(c=>{if(!dead)setCats(c||null);});
+    return ()=>{dead=true;};},[sel.player_id,sel.espn_id]);
   if(cats===undefined)return <div className="stub" style={{marginTop:12}}>loading stat history…</div>;
+  if(!resolvedId)return <div className="stub" style={{marginTop:12}}>no ESPN stat id found for {sel.full_name} — stat history unavailable.</div>;
   const want=CAT_BY_POS[sel.position]||["receiving"];
   const show=want.map(n=>(cats||[]).find(c=>c.name===n)).filter(c=>c&&c.labels&&c.statistics&&c.statistics.length);
   if(!show.length)return <div className="stub" style={{marginTop:12}}>no season stat history available for {sel.full_name}.</div>;
@@ -501,7 +516,7 @@ function StatHistory({sel}){
             </div>))}
         </div>
       </div>);})}
-    <div className="note">season-by-season from ESPN, keyed by the player's ESPN id. in-season the current row updates as games are played.</div>
+    <div className="note">season-by-season from ESPN, keyed by ESPN id{sel.espn_id?"":" (resolved by nflverse name/position map)"}. in-season the current row updates as games are played.</div>
   </div>);
 }
 function PlayerNews({sel}){

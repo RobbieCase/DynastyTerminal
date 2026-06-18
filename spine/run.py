@@ -65,6 +65,7 @@ def main():
     print(f"trade-solve self-test: Spearman {sv['spearman']:.3f}")
 
     age_curves = fit_aging()
+    espn_ids = data.pull_espn_id_map(AGING_SEASONS)
 
     feed_df = features.build_feed(df)
     feed_df["q"] = feed_df.groupby("pos")["gap"].transform(lambda s: s.quantile(0.75))
@@ -91,7 +92,10 @@ def main():
     os.makedirs(DATA, exist_ok=True)
     with open(os.path.join(DATA, "signal.json"), "w") as f:
         json.dump(feed, f, indent=2)
+    with open(os.path.join(DATA, "espn_ids.json"), "w") as f:
+        json.dump(espn_ids, f)
     print(f"\nwrote data/signal.json — {len(feed['players'])} players, by pos {by_pos}")
+    print(f"wrote data/espn_ids.json — {len(espn_ids.get('by_pos_name', {}))} keys")
 
 if __name__ == "__main__":
     main()

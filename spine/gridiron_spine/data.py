@@ -143,6 +143,58 @@ def pull_roster_ages(seasons):
         return None
     return pd.concat(parts, ignore_index=True).groupby(["season", "nkey"], as_index=False).age.max()
 
+def pull_espn_id_map(seasons):
+    """Compact frontend lookup for Sleeper players missing `espn_id`.
+
+    nflverse rosters carry ESPN ids for many players whose Sleeper records do not.
+    Emit a name/position map so the browser can still load ESPN stat history.
+    Returns {"by_pos_name": {"WR|justin jefferson": "4262921"}, "by_name": {...}}.
+    The plain-name map includes only unique names to avoid same-name collisions.
+    """
+    sess = requests.Session(); sess.headers.update(UA)
+    def parquet(url):
+        try:
+            r = sess.get(url, timeout=60)
+            return pd.read_parquet(io.BytesIO(r.content)) if r.status_code == 200 else None
+        except Exception:
+            return None
+    rows = []
+    for y in seasons:
+        rd = None
+        for tmpl in ROSTER_CANDIDATES:
+            rd = parquet(tmpl.format(year=y))
+            if rd is not None and len(rd):
+                break
+        if rd is None:
+            continue
+        cols = set(rd.columns)
+        nm = next((c for c in ("full_name", "player_name", "player_display_name") if c in cols), None)
+        eid = next((c for c in ("espn_id", "espn", "espn_player_id") if c in cols), None)
+        pos = next((c for c in ("position", "pos") if c in cols), None)
+        if not nm or not eid or not pos:
+            print(f"  espn map {y}: missing cols; have {sorted(cols)[:10]}")
+            continue
+        d = rd[[nm, eid, pos]].copy()
+        d["nkey"] = d[nm].map(_norm)
+        d["espn_id"] = pd.to_numeric(d[eid], errors="coerce")
+        d["pos"] = d[pos].astype(str)
+        d = d[d.pos.isin(["QB", "RB", "WR", "TE"])].dropna(subset=["espn_id"])
+        d["season"] = y
+        rows.append(d[["season", "nkey", "pos", "espn_id"]])
+    if not rows:
+        return {"by_pos_name": {}, "by_name": {}}
+    out = pd.concat(rows, ignore_index=True).sort_values("season")
+    # Keep latest season's id per position/name.
+    latest = out.groupby(["pos", "nkey"], as_index=False).last()
+    by_pos_name = {f"{r.pos}|{r.nkey}": str(int(r.espn_id)) for r in latest.itertuples() if r.nkey}
+    by_name = {}
+    for nkey, g in latest.groupby("nkey"):
+        ids = set(str(int(x)) for x in g.espn_id)
+        if nkey and len(ids) == 1:
+            by_name[nkey] = next(iter(ids))
+    print(f"  espn id map: {len(by_pos_name)} pos/name keys, {len(by_name)} unique-name keys")
+    return {"by_pos_name": by_pos_name, "by_name": by_name}
+
 def pull_fantasy_history(seasons):
     """Per-season fantasy PPG by player from nflverse stats_player_week — DEEP history for
     the aging fit, independent of the 2021+ hvpkod usage window. Returns a DataFrame
