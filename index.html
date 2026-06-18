@@ -436,10 +436,14 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
   const trend=v?(v.trend30Day||0):null;
   const {intrinsic,edge}=intrinsicOf(market,trend,sel.position,age,sigP?sigP.gap:null);
   const buy=edge!=null&&edge>3, sell=edge!=null&&edge<-3;
-  // aging outlook from the survival-fit (context only — not in intrinsic)
+  // aging outlook from the survival-fit (context only — not in intrinsic). The 5-season
+  // sample can't estimate survival past the early 30s (curve hits 0), so only show
+  // conditional odds where the current-age baseline is reliable; flag the tail otherwise.
   const agec=sigMeta&&sigMeta.age_curves&&sigMeta.age_curves[sel.position];
-  const survAt=a=>{if(!agec||!agec.surv)return null;const k=Math.max(21,Math.min(36,Math.round(a)));return agec.surv[k];};
-  const condSurv=yrs=>{if(age==null||!agec)return null;const s0=survAt(age),s1=survAt(age+yrs);return s0&&s1!=null?Math.max(0,Math.min(1,s1/s0)):null;};
+  const survAt=a=>{if(!agec||!agec.surv)return null;const v=agec.surv[Math.max(21,Math.min(36,Math.round(a)))];return v==null?null:v;};
+  const baseS=age!=null?survAt(age):null;
+  const reliable=baseS!=null&&baseS>=0.1;
+  const condSurv=yrs=>{if(!reliable)return null;const s1=survAt(age+yrs);return s1==null?null:Math.max(0,Math.min(1,s1/baseS));};
   const out3=condSurv(3), out5=condSurv(5);
 
   return (
@@ -512,14 +516,16 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
       </div>
     )}
 
-    {fn==="val" && agec && age!=null && (out3!=null||out5!=null) && (
+    {fn==="val" && agec && age!=null && (
       <div className="panel pad" style={{marginTop:12}}>
         <div className="lbl" style={{marginBottom:8}}>aging outlook · {sel.position} · survival-fit</div>
         <div className="row" style={{gridTemplateColumns:"repeat(2,1fr)",marginTop:0}}>
-          <div className="metric"><div className="lbl">relevant in 3y</div><div className="v" style={{color:out3==null?"var(--mut)":out3>=.6?"var(--buy)":out3>=.35?"var(--warn)":"var(--sell)"}}>{out3!=null?Math.round(out3*100)+"%":"—"}</div></div>
-          <div className="metric"><div className="lbl">relevant in 5y</div><div className="v" style={{color:out5==null?"var(--mut)":out5>=.5?"var(--buy)":out5>=.25?"var(--warn)":"var(--sell)"}}>{out5!=null?Math.round(out5*100)+"%":"—"}</div></div>
+          <div className="metric"><div className="lbl">relevant in 3y</div><div className="v" style={{color:out3==null?"var(--faint)":out3>=.6?"var(--buy)":out3>=.35?"var(--warn)":"var(--sell)"}}>{out3!=null?Math.round(out3*100)+"%":"—"}</div></div>
+          <div className="metric"><div className="lbl">relevant in 5y</div><div className="v" style={{color:out5==null?"var(--faint)":out5>=.5?"var(--buy)":out5>=.25?"var(--warn)":"var(--sell)"}}>{out5!=null?Math.round(out5*100)+"%":"—"}</div></div>
         </div>
-        <div className="note">Kaplan-Meier survival on {agec.n} {sel.position}s (2021–25): odds a {Math.round(age)}-yo {sel.position} is still fantasy-relevant N years out. context only — deliberately not folded into intrinsic.</div>
+        <div className="note">{reliable
+          ?`Kaplan-Meier survival on ${agec.n} ${sel.position}s (2021–25): odds a ${Math.round(age)}-yo ${sel.position} is still fantasy-relevant N years out. context only — deliberately not folded into intrinsic.`
+          :`at ${Math.round(age)} this ${sel.position} is past the reliable range of the 5-season (2021–25) survival fit — long careers are under-observed, so no honest conditional odds. context only.`}</div>
       </div>
     )}
 
