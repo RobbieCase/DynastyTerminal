@@ -30,11 +30,16 @@ Recommendation: option 1 if we want multi-year visuals before the FantasyCalc se
 The header **mode badge** ships (offseason / in-season · wk N, from Sleeper `/state/nfl`). Still to do: actually *switch* default surfaces and emphasis by phase —
 - Offseason: trade market, rookie/pick analysis, historical trends, portfolio.
 - In-season: lead with live game-to-game data, weekly usage, matchup context.
-- Add the ESPN **gamelog** (game-by-game) to the stat tab for the in-season current row.
 Can't be validated until the season; build the scaffolding, prove it in the fall.
 
 ### D. Trade verdict — deeper
 Revealed-values basis + contention-window tilt ship. Next: scale the consolidation tax by the league's actual roster/bench/taxi settings (vs the current flat 4%/body), and ultimately let the revealed-preference solver *learn* the discount.
+
+### E. Depth charts — quality follow-up
+ESPN is now the primary source for team depth charts, with Sleeper as fallback. Remaining follow-up:
+- Validate all 32 ESPN team-id mappings after deployment.
+- Decide whether WR should display ESPN's slot/rank structure more explicitly (WR1/WR2/slot) instead of a single flattened list.
+- Add a small source/status label per team when ESPN returns partial or unmapped athletes.
 
 ---
 
@@ -61,9 +66,11 @@ Revealed-values basis + contention-window tilt ship. Next: scale the consolidati
 - **Trade 1c** — verdict value-basis (market | revealed) + contention-window tilt; **fixed an inverted verdict** (give vs get).
 - **Consolidation tax fix** — counts real roster bodies only (picks & throw-ins excluded), capped.
 - **Watchlists / portfolio tracking** — ☆ any player; board of edge/gap/value + "since tracked" deltas. The moat clock, personal.
-- **News** — ESPN feed, entity/name-matched to the player, with an around-the-league fallback.
+- **News v0** — ESPN feed, entity/name-matched to the player. Known bug remains: player panels should not fall back to unrelated league headlines.
 - **Trade partner roster browser** — in the trade feature, click another manager and add players from their roster to **I get**.
 - **League tab saved-state view** — saved league opens directly in `lg`; click teams to inspect rosters; change-league path preserved.
 - **League season selector** — defaults to 2026 with a dropdown back to 2020 instead of a free-text season field.
 - **Year-by-year stat history** — ESPN athlete stats by season, position-appropriate, now opened from the player header next to `yoe` instead of a standalone tab.
+- **Game-by-game stat logs** — click a season row inside stat history to expand ESPN regular-season game logs for that player/year.
+- **ESPN depth charts** — depth view now uses ESPN team depth charts as primary source, matched back to Sleeper by ESPN id / `data/espn_ids.json`; Sleeper depth is fallback only.
 - **Mode badge** — offseason/in-season indicator from Sleeper state.
