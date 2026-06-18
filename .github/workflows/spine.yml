@@ -13,6 +13,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so pull --rebase on main is reliable
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -22,10 +24,42 @@ jobs:
         run: python spine/snapshot.py
       - name: run spine
         run: python spine/run.py
-      - name: commit outputs
+      # signal.json is regenerable, so it lives on main for the GitHub Pages frontend.
+      # Clobbering it only causes a self-healing stale feed until the next run.
+      - name: commit signal to main
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data
-          git diff --cached --quiet || git commit -m "spine: nightly data $(date -u +%F)"
-          git push
+          git add data/signal.json
+          if ! git diff --cached --quiet; then
+            git commit -m "spine: signal $(date -u +%F)"
+            git pull --rebase --autostash origin main || true
+            git push
+          else
+            echo "signal.json unchanged"
+          fi
+
+      # Value snapshots are the irreplaceable moat clock. They live on the orphan
+      # 'data' branch, which no local main work ever touches — so it cannot be clobbered.
+      - name: append snapshot to data branch
+        run: |
+          set -e
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          DATE=$(date -u +%F)
+          if [ ! -f "data/values/$DATE.json" ]; then
+            echo "no snapshot produced for $DATE"; exit 0
+          fi
+          git fetch origin data
+          git worktree add /tmp/databr origin/data
+          mkdir -p /tmp/databr/values
+          cp "data/values/$DATE.json" "/tmp/databr/values/$DATE.json"
+          cd /tmp/databr
+          git checkout -B data
+          git add values
+          if ! git diff --cached --quiet; then
+            git commit -m "values: $DATE"
+            git push origin data
+          else
+            echo "snapshot unchanged for $DATE"
+          fi
