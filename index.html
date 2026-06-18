@@ -213,7 +213,7 @@ function App(){
     <div className="head" style={{marginBottom:12}}>
       <div>
         <div className="h1">Dynasty <span style={{color:"var(--wr)"}}>Terminal</span></div>
-        <div className="note" style={{marginTop:2}}>dynasty · live build · chunk 1 — shell + live data</div>
+        <div className="note" style={{marginTop:2}}>dynasty · live build · player · screener · trade · sim</div>
       </div>
       <div className="mono small mut">{pStatus?<span className="err">{pStatus}</span>:<span className="ok">● sleeper live</span>}</div>
     </div>
@@ -242,6 +242,7 @@ function App(){
       {[["val","value"],["use","usage"],["mkt","market"],["comp","comps"],["news","wire"]].map(([k,d])=>(
         <span key={k} className={"tab"+(view==="player"&&fn===k?" on":"")} onClick={()=>{setFn(k);setView("player");}}><b>{k}</b> {d}</span>
       ))}
+      <span className={"tab"+(view==="scr"?" on":"")} onClick={()=>setView("scr")}><b>scr</b> screener</span>
       <span className={"tab"+(view==="trade"?" on":"")} onClick={()=>setView("trade")}><b>trd</b> trade</span>
       <span className={"tab"+(view==="sim"?" on":"")} onClick={()=>setView("sim")}><b>sim</b> season</span>
       <span className={"tab"+(view==="tut"?" on":"")} onClick={()=>setView("tut")}><b>?</b> guide</span>
@@ -284,6 +285,8 @@ function App(){
       ? <TradeTerminal {...{players,fc,fcName,sig,set,pick,myLeague}}/>
       : view==="sim"
       ? <SimTerminal {...{league,teams,fc}}/>
+      : view==="scr"
+      ? <Screener {...{players,fc,fcName,sig,set,pick}}/>
       : view==="tut"
       ? <Tutorial/>
       : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}}/>}
@@ -358,13 +361,7 @@ function DepthChart({team,players,fc,fcName,pick,sel,onBack}){
   </div>);
 }
 function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick}){
-  const sigP=(()=>{
-    if(!sig||!sel) return null;
-    if(sel.espn_id && sig.players[String(sel.espn_id)]) return sig.players[String(sel.espn_id)];
-    const n=norm(sel.full_name);
-    for(const k in sig.players){ if(norm(sig.players[k].name)===n) return sig.players[k]; }
-    return null;
-  })();
+  const sigP=sigFor(sig,sel);
   const sigMeta=sig&&sig.meta;
   if(!sel) return (
     <div className="panel pad" style={{marginTop:12,textAlign:"center",padding:"42px 16px"}}>
@@ -555,13 +552,61 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
   </div>);
 }
 
-function sigFlag(sig,p){if(!sig||!p||!p.espn_id)return null;const s=sig.players[String(p.espn_id)];return s?s.flag:null;}
+// signal.json is keyed by hvpkod PlayerId, which is NOT the Sleeper espn_id, so the
+// espn_id match almost never hits — normalized name is the real join. Build the name
+// index once per signal object and reuse it everywhere.
+let _sigIdxFor=null,_sigIdxCache=null;
+function sigIndex(sig){if(!sig)return null;if(_sigIdxFor===sig)return _sigIdxCache;const m={};for(const k in sig.players)m[norm(sig.players[k].name)]=sig.players[k];_sigIdxFor=sig;_sigIdxCache=m;return m;}
+function sigFor(sig,p){if(!sig||!p)return null;if(p.espn_id&&sig.players[String(p.espn_id)])return sig.players[String(p.espn_id)];const idx=sigIndex(sig);return (idx&&idx[norm(p.full_name)])||null;}
+function sigFlag(sig,p){const s=sigFor(sig,p);return s?s.flag:null;}
 
 const PICKS=[["2026 early 1st",5000],["2026 mid 1st",4200],["2026 late 1st",3500],["2026 2nd",1500],["2026 3rd",600],["2027 1st",3800],["2027 2nd",1300],["2027 3rd",550]];
+// flat dynasty pick estimates, discounted by how far out the draft is and scaled for
+// format (superflex pushes 1sts up — QBs go early). still estimates, not slotted by standings.
+const PICK_BASE={1:4000,2:1400,3:600};
+function ordinal(r){return r===1?"1st":r===2?"2nd":r===3?"3rd":r+"th";}
+function pickValue(round,season,minSeason,sf){
+  let v=PICK_BASE[round]||120;
+  v*=Math.pow(0.92,Math.max(0,(+season)-(+minSeason)));   // farther-out picks worth less
+  if(sf){if(round===1)v*=1.25;else if(round===2)v*=1.10;} // superflex premium on early picks
+  return Math.round(v);
+}
 function PosChip({pos}){return <span className="pos" style={{color:pos==="PICK"?"var(--pick)":POS[pos],background:pos==="PICK"?"rgba(185,139,255,.15)":posBg(pos)}}>{pos}</span>;}
 
 function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const mine=myLeague&&players;
+  const [picks,setPicks]=useState(null);   // {minS, list:[{s,rd,orig,own,fromName}]} derived from Sleeper, or null
+  useEffect(()=>{
+    if(!mine||!myLeague.leagueId){setPicks(null);return;}
+    let dead=false;
+    (async()=>{
+      try{
+        const [lg,tp]=await Promise.all([
+          jget(`${SLEEP}/league/${myLeague.leagueId}`),
+          jget(`${SLEEP}/league/${myLeague.leagueId}/traded_picks`)]);
+        const base=parseInt(lg.season)||new Date().getFullYear();
+        const rounds=Math.min((lg.settings&&lg.settings.draft_rounds)||3,3);
+        const rids=myLeague.teams.map(t=>t.rid);
+        const seasonSet=new Set([base+1,base+2,base+3]);
+        (tp||[]).forEach(p=>{const s=parseInt(p.season);if(s>=base)seasonSet.add(s);});
+        const seasons=[...seasonSet].sort((a,b)=>a-b);const minS=seasons[0];
+        const owner={};
+        seasons.forEach(s=>rids.forEach(r=>{for(let rd=1;rd<=rounds;rd++)owner[`${s}|${rd}|${r}`]=r;}));
+        (tp||[]).forEach(p=>{const k=`${p.season}|${p.round}|${p.roster_id}`;if(k in owner)owner[k]=p.owner_id;});
+        const list=[];
+        Object.entries(owner).forEach(([k,o])=>{if(o!==myLeague.myRosterId)return;
+          const [s,rd,orig]=k.split("|").map(Number);const own=orig===myLeague.myRosterId;
+          list.push({s,rd,orig,own,fromName:own?null:((myLeague.teams.find(t=>t.rid===orig)||{}).name||"?")});});
+        list.sort((a,b)=>a.s-b.s||a.rd-b.rd);
+        if(!dead)setPicks({minS,list});
+      }catch(e){if(!dead)setPicks(null);}
+    })();
+    return ()=>{dead=true;};
+  },[mine,myLeague&&myLeague.leagueId]);
+  const ownedPicks=picks?picks.list.map(d=>({pick:true,id:`pk_${d.s}_${d.rd}_${d.orig}`,
+    name:`${d.s} ${ordinal(d.rd)}${d.own?"":` (via ${d.fromName})`}`,value:pickValue(d.rd,d.s,picks.minS,set.sf)})):null;
+  const pickChips=ownedPicks||PICKS.map(([nm,v])=>({pick:true,id:"pk_"+nm,name:nm,value:v}));
+
   const [get,setGet]=useState([]);const [give,setGive]=useState([]);
   const [q,setQ]=useState("");const [qside,setQside]=useState("get");const [mode,setMode]=useState("fit");
   const pidx=useMemo(()=>players?Object.values(players).filter(p=>["QB","RB","WR","TE"].includes(p.position)&&p.team&&p.full_name).sort((x,y)=>(x.search_rank||9999)-(y.search_rank||9999)):[],[players]);
@@ -621,14 +666,16 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
             style={{cursor:"pointer",fontSize:12,padding:"4px 8px",borderRadius:6,border:"1px solid var(--line2)",background:has(give,p)?"rgba(126,231,135,.08)":"var(--panel2)",opacity:has(give,p)?.5:1}}>
             <span style={{color:POS[p.position]}}>{p.position}</span> {p.full_name} <span className="mut">{fmt(valOf(p))}</span></span>))}
       </div>
-      <div className="lbl" style={{margin:"12px 0 6px"}}>my picks</div>
+      <div className="lbl" style={{margin:"12px 0 6px"}}>my picks {ownedPicks&&<span className="mut" style={{textTransform:"none"}}>· {ownedPicks.length} owned</span>}</div>
       <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
-        {PICKS.map(([nm,v])=>{const it={pick:true,id:"pk_"+nm,name:nm,value:v};return(
-          <span key={nm} onClick={()=>addTo(setGive,it)}
+        {pickChips.map(it=>(
+          <span key={it.id} onClick={()=>addTo(setGive,it)}
             style={{cursor:"pointer",fontSize:12,padding:"4px 8px",borderRadius:6,border:"1px solid var(--line2)",background:has(give,it)?"rgba(126,231,135,.08)":"var(--panel2)",opacity:has(give,it)?.5:1}}>
-            <span style={{color:"var(--pick)"}}>◆</span> {nm} <span className="mut">{fmt(v)}</span></span>);})}
+            <span style={{color:"var(--pick)"}}>◆</span> {it.name} <span className="mut">{fmt(it.value)}</span></span>))}
       </div>
-      <div className="note">pick values are dynasty estimates — auto-deriving your exact owned picks from Sleeper trades is a follow-up.</div>
+      <div className="note">{ownedPicks
+        ?"your owned picks, auto-derived from Sleeper's traded-pick ledger and scaled for your format. values are flat dynasty estimates (not slotted by standings)."
+        :"pick values are dynasty estimates — sync your league (lg) to auto-derive your exact owned picks from Sleeper."}</div>
     </div>}
 
     {mine && <div className="panel pad" style={{marginTop:12}}>
@@ -743,6 +790,110 @@ function SimTerminal({league,teams,fc}){
           </div>
         </div>))}
     </div>}
+  </div>);
+}
+
+function Screener({players,fc,fcName,sig,set,pick}){
+  const [pos,setPos]=useState("ALL");
+  const [sortK,setSortK]=useState("edge");
+  const [dir,setDir]=useState(-1);          // -1 desc, 1 asc
+  const [buysOnly,setBuysOnly]=useState(false);
+  const [q,setQ]=useState("");
+  const CAP=120;
+
+  const rows=useMemo(()=>{
+    if(!players)return [];
+    const out=[];
+    for(const id in players){
+      const p=players[id];
+      if(!["QB","RB","WR","TE"].includes(p.position)||!p.team||!p.full_name)continue;
+      const v=fcVal(fc,fcName,p);
+      const market=v?v.value:null;
+      const trend=v?(v.trend30Day||0):null;
+      const age=ageFrom(p.birth_date);
+      const mom=market?Math.max(-.15,Math.min(.15,trend/market)):0;
+      const intrinsic=market!=null?market*ageMult(p.position,age)*(1+mom):null;
+      const edge=market&&intrinsic?((intrinsic-market)/market*100):null;
+      const sp=sigFor(sig,p);
+      const z_opp=sp?sp.z_opp:null, gap=sp?sp.gap:null, flag=sp?sp.flag:null;
+      if(market==null&&!sp)continue;        // skip players with neither price nor signal
+      out.push({p,name:p.full_name,pos:p.position,team:p.team,market,intrinsic,edge,z_opp,gap,flag});
+    }
+    return out;
+  },[players,fc,fcName,sig]);
+
+  const filtered=useMemo(()=>{
+    let r=rows;
+    if(pos!=="ALL")r=r.filter(x=>x.pos===pos);
+    if(buysOnly)r=r.filter(x=>x.flag==="buy");
+    if(q.trim()){const s=q.toLowerCase();r=r.filter(x=>x.name.toLowerCase().includes(s));}
+    return r.slice().sort((a,b)=>{
+      if(sortK==="name")return dir*a.name.localeCompare(b.name);
+      const av=a[sortK],bv=b[sortK];
+      if(av==null&&bv==null)return 0; if(av==null)return 1; if(bv==null)return -1;  // nulls last
+      return dir*(av-bv);
+    });
+  },[rows,pos,buysOnly,q,sortK,dir]);
+
+  const flags=filtered.filter(r=>r.flag==="buy").length;
+  function sortBy(k){if(k===sortK)setDir(d=>-d);else{setSortK(k);setDir(k==="name"?1:-1);}}
+  const arrow=k=>sortK===k?(dir===-1?" ▼":" ▲"):"";
+  const COLS=[["market","value"],["intrinsic","intrinsic"],["edge","edge"],["z_opp","usage z"],["gap","gap"]];
+  const GRID="26px minmax(140px,1.5fr) 76px 78px 66px 66px 60px 46px";
+  const HCell=({k,label,r})=>(
+    <span onClick={()=>sortBy(k)} className="lbl" style={{cursor:"pointer",textAlign:r?"right":"left",whiteSpace:"nowrap",color:sortK===k?"var(--wr)":"var(--faint)"}}>{label}{arrow(k)}</span>);
+
+  return (
+  <div style={{marginTop:12}}>
+    <div className="panel pad">
+      <div className="head" style={{marginBottom:10}}>
+        <div className="lbl">screener · mispricing board</div>
+        <div className="mono faint" style={{fontSize:11}}>{filtered.length} players · {flags} buy flags</div>
+      </div>
+      <div className="selset" style={{marginTop:0}}>
+        <span className="lbl">pos</span>
+        {["ALL","QB","RB","WR","TE"].map(P=>(
+          <span key={P} className={"toggle"+(pos===P?" on":"")} onClick={()=>setPos(P)}
+            style={pos===P&&P!=="ALL"?{color:POS[P],borderColor:POS[P]}:{}}>{P.toLowerCase()}</span>))}
+        <span style={{width:1,height:18,background:"var(--line2)",margin:"0 3px"}}></span>
+        <span className={"toggle"+(buysOnly?" on":"")} onClick={()=>setBuysOnly(b=>!b)}>buy flags</span>
+        <input className="field" style={{flex:"1 1 160px",padding:"6px 10px",fontSize:12}} placeholder="filter by name…" value={q} onChange={e=>setQ(e.target.value)}/>
+      </div>
+    </div>
+
+    <div className="panel" style={{marginTop:12,overflowX:"auto"}}>
+      <div style={{minWidth:640}}>
+        <div style={{display:"grid",gridTemplateColumns:GRID,gap:8,padding:"10px 14px",borderBottom:"1px solid var(--line2)",alignItems:"center"}}>
+          <span></span>
+          <HCell k="name" label="player"/>
+          {COLS.map(([k,l])=><HCell key={k} k={k} label={l} r/>)}
+          <span className="lbl" style={{textAlign:"right"}}>flag</span>
+        </div>
+        {filtered.slice(0,CAP).map((x,i)=>(
+          <div key={x.p.player_id} onClick={()=>pick(x.p)}
+            style={{display:"grid",gridTemplateColumns:GRID,gap:8,padding:"7px 14px",alignItems:"center",cursor:"pointer",
+              borderBottom:i<Math.min(CAP,filtered.length)-1?"1px solid var(--line)":"none"}}
+            onMouseEnter={e=>e.currentTarget.style.background="#1B212A"} onMouseLeave={e=>e.currentTarget.style.background=""}>
+            <span className="mono faint" style={{fontSize:11}}>{i+1}</span>
+            <span style={{display:"flex",alignItems:"center",gap:7,minWidth:0}}>
+              <PosChip pos={x.pos}/>
+              <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{x.name}</span>
+              <span className="mono faint" style={{fontSize:10}}>{x.team}</span>
+            </span>
+            <span className="mono small" style={{textAlign:"right",color:"var(--tx)"}}>{x.market!=null?fmt(x.market):"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:x.intrinsic!=null?"var(--wr)":"var(--faint)"}}>{x.intrinsic!=null?fmt(x.intrinsic):"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:x.edge==null?"var(--faint)":x.edge>3?"var(--buy)":x.edge<-3?"var(--sell)":"var(--mut)"}}>{x.edge!=null?(x.edge>=0?"+":"")+x.edge.toFixed(1)+"%":"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:x.z_opp!=null?"var(--tx)":"var(--faint)"}}>{x.z_opp!=null?(x.z_opp>=0?"+":"")+x.z_opp.toFixed(1):"—"}</span>
+            <span className="mono small" style={{textAlign:"right",color:x.gap==null?"var(--faint)":x.gap>0?"var(--buy)":"var(--mut)"}}>{x.gap!=null?(x.gap>=0?"+":"")+x.gap.toFixed(1):"—"}</span>
+            <span style={{textAlign:"right"}}>{x.flag==="buy"?<span className="mono" style={{color:"var(--buy)",fontSize:10}}>buy</span>:<span className="faint">·</span>}</span>
+          </div>))}
+        {filtered.length===0&&<div className="mono faint" style={{fontSize:12,padding:"18px 14px",textAlign:"center"}}>no players match — clear filters{!sig?", or wait for signal.json":""}</div>}
+      </div>
+    </div>
+    {filtered.length>CAP&&<div className="note">showing top {CAP} of {filtered.length} — narrow with the position / name filters.</div>}
+    <div className="note">
+      click any row to open the player. value &amp; edge come from FantasyCalc{!fc&&" (load on deploy)"}; usage z &amp; gap come from the spine's season feed (signal.json), which is stable through the offseason.
+    </div>
   </div>);
 }
 
