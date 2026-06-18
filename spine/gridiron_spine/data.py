@@ -13,8 +13,15 @@ UA = {"User-Agent": "gridiron-spine/0.2"}
 BASE = "https://raw.githubusercontent.com/hvpkod/NFL-Data/main/NFL-data-Players"
 NFLVERSE_RELEASES = {
     "snap_counts": "https://github.com/nflverse/nflverse-data/releases/download/snap_counts/snap_counts_{year}.parquet",
-    "player_stats": "https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats_{year}.parquet",
 }
+# nflverse moved the weekly offense stats file across releases over time (the legacy
+# `player_stats` release is frozen and lacks recent seasons). Try newest-first and use
+# whichever the runner can actually fetch; the per-year log line records which won.
+PLAYER_STATS_CANDIDATES = [
+    "https://github.com/nflverse/nflverse-data/releases/download/stats_player/stats_player_week_{year}.parquet",
+    "https://github.com/nflverse/nflverse-data/releases/download/player_stats/stats_player_week_{year}.parquet",
+    "https://github.com/nflverse/nflverse-data/releases/download/player_stats/player_stats_{year}.parquet",
+]
 
 def _norm(s):
     """Name normalization for the nflverse<->hvpkod join (no shared player id)."""
@@ -34,22 +41,56 @@ def pull_nflverse(seasons):
             return pd.read_parquet(io.BytesIO(r.content)) if r.status_code == 200 else None
         except Exception:
             return None
+
     snap_parts, ay_parts = [], []
     for y in seasons:
+        # --- snap share (PFR) — already working ---
         s = parquet(NFLVERSE_RELEASES["snap_counts"].format(year=y))
         if s is not None and {"season", "week", "player", "offense_pct"} <= set(s.columns):
             s = s[["season", "week", "player", "offense_pct"]].copy()
             s["nkey"] = s.player.map(_norm)
             s["snap"] = pd.to_numeric(s.offense_pct, errors="coerce")
             snap_parts.append(s[["season", "week", "nkey", "snap"]])
-        ps = parquet(NFLVERSE_RELEASES["player_stats"].format(year=y))
-        if ps is not None and "air_yards_share" in getattr(ps, "columns", []):
-            nm = next((c for c in ("player_display_name", "player_name") if c in ps.columns), None)
-            if nm and {"season", "week"} <= set(ps.columns):
-                p = ps[["season", "week", nm, "air_yards_share"]].copy()
-                p["nkey"] = p[nm].map(_norm)
-                p["ay"] = pd.to_numeric(p.air_yards_share, errors="coerce")
-                ay_parts.append(p[["season", "week", "nkey", "ay"]])
+
+        # --- air-yards share: try each release candidate until one yields data ---
+        ps = used = None
+        for tmpl in PLAYER_STATS_CANDIDATES:
+            cand = parquet(tmpl.format(year=y))
+            if cand is not None and len(cand):
+                ps, used = cand, tmpl.split("/download/")[1].split("/")[0]
+                break
+        if ps is None:
+            print(f"  player_stats {y}: no candidate fetched")
+            continue
+        cols = set(ps.columns)
+        nm = next((c for c in ("player_display_name", "player_name", "player") if c in cols), None)
+        if nm is None or not {"season", "week"} <= cols:
+            print(f"  player_stats {y} [{used}]: missing name/season cols; have {sorted(cols)[:8]}")
+            continue
+        p = ps.copy()
+        if "season_type" in cols:                       # drop playoff weeks (avoid week-num collisions)
+            p = p[p.season_type.astype(str).str.upper().str.startswith("REG")]
+        p["nkey"] = p[nm].map(_norm)
+        if "air_yards_share" in cols:
+            p["ay"] = pd.to_numeric(p["air_yards_share"], errors="coerce")
+            src = "air_yards_share"
+        elif "receiving_air_yards" in cols:             # compute share if precomputed col is gone
+            tcol = next((c for c in ("team", "recent_team", "posteam") if c in cols), None)
+            p["_ray"] = pd.to_numeric(p["receiving_air_yards"], errors="coerce").fillna(0.0)
+            if tcol:
+                tot = p.groupby(["season", "week", tcol])["_ray"].transform("sum")
+                p["ay"] = np.where(tot > 0, p["_ray"] / tot, np.nan)
+                src = "receiving_air_yards/team"
+            else:
+                p["ay"] = np.nan; src = "receiving_air_yards (no team col)"
+        else:
+            print(f"  player_stats {y} [{used}]: no air-yards column; have {sorted(cols)[:12]}")
+            continue
+        sub = p[["season", "week", "nkey", "ay"]].dropna(subset=["ay"])
+        if len(sub):
+            ay_parts.append(sub)
+            print(f"  player_stats {y} [{used}]: {len(sub)} ay rows via {src}")
+
     out = None
     if snap_parts:
         out = pd.concat(snap_parts, ignore_index=True).groupby(["season", "week", "nkey"], as_index=False).snap.max()
