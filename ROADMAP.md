@@ -31,12 +31,15 @@ Note copy fixed (was claiming a "chunk-2 feed" that's stale). Current verdict = 
 ## 2. Value history — backfill beyond what we've stored?
 FantasyCalc's API is **current-only** (no history) — that's exactly why `snapshot.py` accumulates the daily moat. The stored series only goes back to its first run (2026-06-17).
 
-**Open question / to investigate:** third-party *open* historical dynasty-value datasets we could backfill from:
-- **DynastyProcess** (`github.com/dynastyprocess/data`) — publishes historical value tables; reachable from the Action.
-- KeepTradeCut — has history but no free API.
-- FantasyPros / others — mostly paywalled.
+**Investigated (2026-06-18):**
+- **DynastyProcess** (`github.com/dynastyprocess/data`, `files/values.csv`): the file is a **current snapshot** (single `scrape_date`), BUT it has **~349 dated commits** in git history → a multi-year historical series is recoverable by walking commit SHAs (fetch `raw` at each commit, doable on the Action via the GitHub API). **Catch:** these are **FantasyPros-ECR-derived** values (`value_1qb`/`value_2qb`), *not* FantasyCalc — different methodology and scale, so they **cannot cleanly extend our FantasyCalc moat**.
+- KeepTradeCut — history exists, no free API.
 
-If a compatible source exists, one-time backfill the `data/values/` branch so the time-series, sparklines, and any mispricing-over-time work start with real depth instead of forward-only. If not, the moat stays forward-accumulating (still valuable, just slower).
+**Decision needed (not built):** two honest options —
+1. Build a **separate** DynastyProcess-derived historical series (parallel to the FantasyCalc moat) → instant multi-year value trends for charts/watchlists, clearly labeled as a different source. One-time git-history backfill script + nightly append.
+2. Keep **FantasyCalc forward-only** as the single clean moat (simpler, one source, but slow to accumulate).
+
+Recommendation: option 1 *if* we want multi-year trend visuals soon (label the source), since the FantasyCalc series will take months to get deep. Otherwise defer.
 
 ---
 
