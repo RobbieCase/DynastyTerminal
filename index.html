@@ -1020,9 +1020,9 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
   const myTeam=mine?myLeague.teams.find(t=>t.rid===myLeague.myRosterId):null;
   const myPlayers=myTeam?resolve(myTeam.playerIds).sort((a,b)=>valOf(b)-valOf(a)):[];
   const otherTeams=mine?myLeague.teams.filter(t=>t.rid!==myLeague.myRosterId):[];
-  const browseTeam=(browseRid&&otherTeams.find(t=>t.rid===browseRid))||otherTeams[0]||null;
+  const browseTeam=browseRid?otherTeams.find(t=>t.rid===browseRid):null;
   const browsePlayers=browseTeam?resolve(browseTeam.playerIds).sort((a,b)=>valOf(b)-valOf(a)):[];
-  const pool=mine?myLeague.teams.filter(t=>t.rid!==myLeague.myRosterId).flatMap(t=>resolve(t.playerIds).map(p=>({p,owner:t.name}))):[];
+  const pool=mine?myLeague.teams.filter(t=>t.rid!==myLeague.myRosterId).flatMap(t=>resolve(t.playerIds).map(p=>({p,owner:t.name,ownerRid:t.rid}))):[];
   const posSum=pls=>{const s={QB:0,RB:0,WR:0,TE:0};pls.forEach(p=>{if(s[p.position]!=null)s[p.position]+=valOf(p);});return s;};
   const myS=posSum(myPlayers);
   const sums=mine?myLeague.teams.map(t=>posSum(resolve(t.playerIds))):[];
@@ -1107,29 +1107,6 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
         :"pick values are dynasty estimates — sync your league (lg) to auto-derive your exact owned picks from Sleeper."}</div>
     </div>}
 
-    {mine && otherTeams.length>0 && <div className="panel pad" style={{marginTop:12}}>
-      <div className="head" style={{marginBottom:8}}>
-        <div className="lbl">browse trade partners</div>
-        <div className="mono small mut">{browseTeam?browseTeam.name:"select a team"}</div>
-      </div>
-      <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:10}}>
-        {otherTeams.map(t=>(
-          <span key={t.rid} className={"toggle"+((browseTeam&&browseTeam.rid===t.rid)?" on":"")} onClick={()=>setBrowseRid(t.rid)}
-            style={{maxWidth:180,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{t.name}</span>
-        ))}
-      </div>
-      {browseTeam&&<div>
-        {browsePlayers.slice(0,24).map(p=>{const fl=sigFlag(sig,p);const added=has(get,p);return(
-          <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1}}>
-            <PosChip pos={p.position}/>
-            <span style={{flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.full_name}{fl==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}</span>
-            <span className="mono small mut">{fmt(valOf(p))}</span>
-            <span className="mono" style={{color:"var(--wr)",fontSize:11}}>+ get</span>
-          </div>);})}
-      </div>}
-      <div className="note">click another manager, then click a player to add them to {lblGet}. sorted by current format value.</div>
-    </div>}
-
     {mine && <div className="panel pad" style={{marginTop:12}}>
       <div className="head"><div className="lbl">positional needs</div>
         <div style={{display:"flex",gap:6}}>
@@ -1147,12 +1124,13 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
             {P.toLowerCase()}{isWeak&&<span style={{color:"var(--warn)"}}> •</span>}</span>);})}
       </div>
       {targets.length===0&&<div className="mono faint" style={{fontSize:11}}>{fc?"no candidates at this position":"no targets — load FantasyCalc values (deploy)"}</div>}
-      {targets.map(({p,owner,score,sg})=>{const added=has(get,p);const a=ageFrom(p.birth_date);return(
+      {targets.map(({p,owner,ownerRid,score,sg})=>{const added=has(get,p);const a=ageFrom(p.birth_date);return(
         <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1,alignItems:"flex-start"}}>
           <PosChip pos={p.position}/>
           <div style={{flex:1,minWidth:0}}>
             <div>{p.full_name}{sg&&sg.flag==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}
-              <span className="mut mono" style={{fontSize:10}}> · {owner}</span></div>
+              <span className="mut mono" onClick={e=>{e.stopPropagation();setBrowseRid(browseRid===ownerRid?null:ownerRid);}}
+                style={{fontSize:10,cursor:"pointer",color:browseRid===ownerRid?"var(--wr)":"var(--mut)"}}> · {owner} roster {browseRid===ownerRid?"▴":"▾"}</span></div>
             <div className="mono faint" style={{fontSize:10,marginTop:2}}>
               {sg?`gap ${sg.gap>=0?"+":""}${sg.gap}`:"no signal"}
               {sg&&sg.snap!=null?` · snap ${Math.round(sg.snap*100)}%`:""}
@@ -1160,8 +1138,21 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
           </div>
           <span className="mono small mut">{fmt(valOf(p))}</span>
           <span className="mono" style={{color:"var(--wr)",fontSize:11}}>+ get</span></div>);})}
+      {browseTeam&&<div className="panel pad" style={{marginTop:10,background:"var(--panel2)"}}>
+        <div className="head" style={{marginBottom:8}}>
+          <div className="lbl">{browseTeam.name} · roster</div>
+          <span className="mono faint" onClick={()=>setBrowseRid(null)} style={{fontSize:11,cursor:"pointer"}}>close</span>
+        </div>
+        {browsePlayers.slice(0,24).map(p=>{const fl=sigFlag(sig,p);const added=has(get,p);return(
+          <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1}}>
+            <PosChip pos={p.position}/>
+            <span style={{flex:1,minWidth:0,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{p.full_name}{fl==="buy"&&<span className="mono" style={{color:"var(--buy)",fontSize:10}}> · buy</span>}</span>
+            <span className="mono small mut">{fmt(valOf(p))}</span>
+            <span className="mono" style={{color:"var(--wr)",fontSize:11}}>+ get</span>
+          </div>);})}
+      </div>}
       <div className="note">{tgtSort==="buy"
-        ?"buy-low score: usage gap (backtested) + buy flag + snap-share role + youth, minus a price penalty — ascending players the market hasn't caught up to. • marks your weak spots."
+        ?"buy-low score: usage gap (backtested) + buy flag + snap-share role + youth, minus a price penalty — ascending players the market hasn't caught up to. click an owner's roster link to inspect that team. • marks your weak spots."
         :"ranked by raw market value (best available)."}</div>
     </div>}
 
