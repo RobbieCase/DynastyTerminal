@@ -359,9 +359,10 @@ function App(){
       : view==="watch"
       ? <WatchlistView {...{watch,players,fc,fcName,sig,set,pick,toggleWatch}}/>
       : view==="tut"
-      ? <Tutorial/>
+      ? <Tutorial {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
       : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch}}/>}
 
+    <IntegrationStatus compact {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
     <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
       live now: Sleeper data + league sync, trending adds, ESPN global/player news, FantasyCalc market values, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
       still ahead: survival-curve aging to replace v0 intrinsic, vegas prop-implied points (waiting on the season), and richer news/FAAB aggregation.
@@ -555,6 +556,47 @@ function GlobalNewsWire(){
           ))}
         </div>
       </div>
+    </div>);
+}
+function IntegrationStatus({players,pStatus,fc,fcStatus,sig,nflState,compact=false}){
+  const [remote,setRemote]=useState({ids:"check",news:"check",depth:"check"});
+  useEffect(()=>{let dead=false;
+    loadEspnIdMap().then(m=>{if(!dead)setRemote(s=>({...s,ids:m&&m.by_pos_name?"ok":"warn"}));});
+    loadNews().then(n=>{if(!dead)setRemote(s=>({...s,news:n&&n.length?"ok":"warn"}));});
+    loadEspnDepth("KC",nflState&&nflState.season).then(d=>{if(!dead)setRemote(s=>({...s,depth:d&&d.items?"ok":"warn"}));});
+    return ()=>{dead=true;};
+  },[nflState&&nflState.season]);
+  const sigCount=sig&&sig.players?Object.keys(sig.players).length:0;
+  const playerCount=players?Object.keys(players).length:0;
+  const items=[
+    {name:"Sleeper",status:players?"ok":pStatus?"warn":"check",detail:players?`${playerCount} players`:pStatus||"loading"},
+    {name:"FantasyCalc",status:fc?"ok":fcStatus&&fcStatus!=="loading values…"?"warn":"check",detail:fc?"market loaded":fcStatus||"loading"},
+    {name:"signal.json",status:sigCount>1000?"ok":sig?"warn":"check",detail:sigCount?`${sigCount} players`:"loading"},
+    {name:"espn_ids",status:remote.ids,detail:remote.ids==="ok"?"local map loaded":"checking"},
+    {name:"ESPN news",status:remote.news,detail:remote.news==="ok"?"feed reachable":"checking"},
+    {name:"ESPN depth",status:remote.depth,detail:remote.depth==="ok"?"sample reachable":"checking"}
+  ];
+  const col=s=>s==="ok"?"var(--buy)":s==="warn"?"var(--warn)":"var(--faint)";
+  if(compact)return (
+    <div className="note" style={{marginTop:14}}>
+      source status: {items.map((it,i)=><span key={it.name}><span style={{color:col(it.status)}}>{it.status}</span> {it.name}{i<items.length-1?" · ":""}</span>)}
+    </div>);
+  return (
+    <div className="panel pad" style={{marginTop:12}}>
+      <div className="head" style={{marginBottom:8}}>
+        <div className="lbl">integration status</div>
+        <div className="mono faint" style={{fontSize:11}}>runtime source checks</div>
+      </div>
+      <div className="row" style={{gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",marginTop:0}}>
+        {items.map(it=>(
+          <div key={it.name} className="metric">
+            <div className="lbl">{it.name}</div>
+            <div className="mono small" style={{marginTop:5,color:col(it.status)}}>{it.status}</div>
+            <div className="mono faint" style={{fontSize:10,marginTop:3}}>{it.detail}</div>
+          </div>
+        ))}
+      </div>
+      <div className="note">local deploy checks are also available with <span className="mono">node scripts/validate.mjs</span>; add <span className="mono">--network</span> for live ESPN/Sleeper smoke checks.</div>
     </div>);
 }
 // ESPN athlete stats — year-by-year, keyed by espn_id (which Sleeper provides), client-side.
@@ -1539,13 +1581,14 @@ function TipMetric({term,children}){
   const g=GLOSSARY.find(x=>x[0]===term);
   return <span className="tip">{children}<span className="tipbox"><b style={{color:"var(--wr)"}}>{term}</b><br/>{g?g[1]:""}</span></span>;
 }
-function Tutorial(){
+function Tutorial({players,pStatus,fc,fcStatus,sig,nflState}){
   return (
   <div style={{marginTop:12}}>
     <div className="panel pad">
       <div className="lbl" style={{marginBottom:6}}>guide · hover any underlined term</div>
       <div className="small mut">A worked example. Every metric below is hover-explained; the full glossary is underneath for mobile.</div>
     </div>
+    <IntegrationStatus {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
     <div className="panel pad" style={{marginTop:12}}>
       <div style={{fontSize:20,fontWeight:600}}>J. Example <span className="mono small mut" style={{fontWeight:400}}>· WR · DAL · 24.3y</span></div>
       <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>

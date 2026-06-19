@@ -171,6 +171,7 @@ ESPN is now the primary source for team depth charts, with Sleeper as fallback. 
 ---
 
 ## Shipped
+- **Validation harness + integration status** — `node scripts/validate.mjs` checks JSX/Babel transform, core data shapes, and optional ESPN/Sleeper smoke checks; the app now shows runtime source status in the guide/footer.
 - **Moat-clock fix** — value snapshots on the orphan `data` branch (local pushes can't clobber).
 - **Screener** — sortable mispricing board over the universe.
 - **Pick auto-derivation** — owned picks from Sleeper's traded-pick ledger, format-scaled.
