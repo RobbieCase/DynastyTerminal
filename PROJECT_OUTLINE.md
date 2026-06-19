@@ -98,6 +98,7 @@ flowchart LR
   P0 --> L["Source-label audit"]
   P0 --> T["Smoke tests and integration checks"]
   P0 --> D["Depth chart validation"]
+  P0 --> B["Build migration decision"]
 
   P1 --> R["Revealed-preference hardening"]
   P1 --> VH["Parallel historical value series"]
@@ -144,7 +145,7 @@ Roadmap:
 
 ### 3. Integration contracts are brittle
 
-The app is intentionally buildless, which is good for deployment speed, but it means many live integrations happen directly in the browser. ESPN, Sleeper, FantasyCalc, GitHub branch reads, and localStorage all have slightly different failure modes.
+The app is currently buildless, which has been good for deployment speed, but it should be treated as a phase, not a principle. Many live integrations happen directly in the browser. ESPN, Sleeper, FantasyCalc, GitHub branch reads, and localStorage all have slightly different failure modes, and a single `index.html` makes those contracts harder to test.
 
 Roadmap:
 - Add a small integration-status panel in the guide or footer.
@@ -154,7 +155,8 @@ Roadmap:
   - ESPN depth chart for several teams resolves names.
   - Player stats and gamelogs parse.
   - News does not show unrelated articles as player news.
-- Keep the app buildless, but add a repeatable validation script around the extracted Babel block and data-shape checks.
+- Add a repeatable validation script around the extracted Babel block and data-shape checks immediately.
+- Migrate to a lightweight build when the validation harness starts fighting the single-file model.
 
 ### 4. News is currently a trust problem
 
@@ -187,15 +189,30 @@ Roadmap:
 The single-file deployment model is fine. The weakness is not "single file" by itself; it is that product surfaces, data access, modeling helpers, UI components, and copy all live together without strong section boundaries or tests.
 
 Roadmap:
-- Keep no-build deployment for now.
+- Keep no-build deployment only as long as it helps speed more than it hurts correctness.
 - Organize `index.html` into clear sections with stronger comments:
   - data clients
   - source/index helpers
   - player surfaces
   - league/trade/sim surfaces
   - guide/copy
-- Add a validation script instead of introducing a full bundler.
-- Reconsider modularization only if the single-file approach slows iteration.
+- Add a validation script now.
+- Start a staged migration plan toward Vite + React modules:
+  - `src/data/` for API clients and source adapters.
+  - `src/model/` for value, trade, signal, pick, and join helpers.
+  - `src/components/` for reusable UI pieces.
+  - `src/surfaces/` for player, league, trade, screener, watchlist, sim, and guide views.
+  - `public/data/` or copied `data/` artifacts for Pages deploy.
+- Use GitHub Pages from a built `dist/` once the split happens.
+
+Migration triggers:
+- Adding automated browser tests.
+- Adding more Action-generated artifacts such as news, coverage reports, or historical value series.
+- Reusing components across multiple surfaces becomes painful.
+- Source-contract bugs become more expensive than build complexity.
+- The portfolio needs to demonstrate production engineering, not only clever single-file hacking.
+
+Recommended path: do not pause product work for a framework migration immediately. First add the validation harness and source-label cleanup. Then migrate to Vite before the next major surface build, especially before news aggregation, portfolio alerts, or a richer offseason/in-season mode switch.
 
 ### 7. Offseason mode is not yet a first-class product
 
@@ -246,7 +263,12 @@ Goal: make every displayed number/source defensible.
    - Validate `signal.json`, `espn_ids.json`, and core data shapes.
    - Add a small set of ESPN/Sleeper smoke checks that can run manually or in CI where network allows.
 
-4. ESPN depth hardening.
+4. Build migration decision.
+   - Keep no-build only while it is cheaper than a build step.
+   - Define the Vite migration boundary before the next major surface build.
+   - Preserve GitHub Pages deploy via built static assets.
+
+5. ESPN depth hardening.
    - Validate all 32 team mappings.
    - Make WR slot/rank structure clearer.
    - Show partial-source status when ESPN has unmapped athletes.
@@ -315,8 +337,8 @@ If the goal is maximum improvement per hour, do this next:
 1. Fix news fallback and global news separation.
 2. Do the source-label audit, especially FantasyCalc vs DWR/revealed/intrinsic wording.
 3. Add a small validation script for data shape + Babel syntax.
-4. Validate ESPN depth mappings for all 32 teams and improve WR slot display.
-5. Add revealed-value coverage/confidence to the trade terminal.
+4. Decide and document the Vite migration boundary.
+5. Validate ESPN depth mappings for all 32 teams and improve WR slot display.
+6. Add revealed-value coverage/confidence to the trade terminal.
 
 That sprint improves trust first, then sharpens the differentiated value story. It is less flashy than adding another tab, but it makes the terminal feel much more real.
-
