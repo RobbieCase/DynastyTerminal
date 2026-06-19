@@ -1124,17 +1124,30 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
 }
 
 // signal.json is keyed by hvpkod PlayerId, which is NOT the Sleeper espn_id, so the
-// espn_id match almost never hits — normalized name is the real join. Build the name
-// index once per signal object and reuse it everywhere.
+// espn_id match almost never hits — normalized name is the real join. Keep candidates
+// and score them conservatively so stale/name-collision rows do not leak onto rookies.
 let _sigIdxFor=null,_sigIdxCache=null;
 function sigIndex(sig){if(!sig)return null;if(_sigIdxFor===sig)return _sigIdxCache;
-  const byName={},byPosName={};
-  for(const k in sig.players){const s=sig.players[k];const n=norm(s.name);byName[n]=s;byPosName[(s.pos||"")+"|"+n]=s;}
-  _sigIdxFor=sig;_sigIdxCache={byName,byPosName};return _sigIdxCache;}
+  const byPosName={},seasons=[];
+  for(const k in sig.players){const s=sig.players[k],n=norm(s.name),key=(s.pos||"")+"|"+n;
+    (byPosName[key]=byPosName[key]||[]).push(s);if(s.season)seasons.push(+s.season);}
+  Object.values(byPosName).forEach(list=>list.sort((a,b)=>(b.season||0)-(a.season||0)));
+  _sigIdxFor=sig;_sigIdxCache={byPosName,maxSeason:seasons.length?Math.max(...seasons):null};return _sigIdxCache;}
 function sigFor(sig,p){if(!sig||!p)return null;
-  if(p.espn_id&&sig.players[String(p.espn_id)])return sig.players[String(p.espn_id)];
   const idx=sigIndex(sig);if(!idx)return null;const n=norm(p.full_name);
-  return idx.byPosName[(p.position||"")+"|"+n]||idx.byName[n]||null;}   // pos-disambiguated, then name
+  const list=idx.byPosName[(p.position||"")+"|"+n]||[];
+  const floor=idx.maxSeason?idx.maxSeason-2:null;
+  const rookie=(p.years_exp===0||p.years_exp==="0");
+  const currentTeam=p.team&&p.team!=="FA"?p.team:null;
+  const scored=list.map(s=>{
+    const stale=floor&&s.season<floor;
+    const teamKnown=s.team&&s.team!=="FA";
+    const teamMatch=currentTeam&&teamKnown&&s.team===currentTeam;
+    const teamConflict=currentTeam&&teamKnown&&s.team!==currentTeam;
+    if(stale||rookie||teamConflict)return null;
+    return {...s,_joinScore:(teamMatch?3:0)+(s.season||0)/10000};
+  }).filter(Boolean).sort((a,b)=>b._joinScore-a._joinScore);
+  return scored[0]||null;}
 function sigFlag(sig,p){const s=sigFor(sig,p);return s?s.flag:null;}
 
 // ---- revealed-preference value solver, CLIENT-SIDE over the synced league's real

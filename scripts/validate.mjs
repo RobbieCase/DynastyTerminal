@@ -48,6 +48,8 @@ async function checkIndex() {
   assertCheck("integration status present", source.includes("function IntegrationStatus"), "runtime source status panel exists");
   assertCheck("identity coverage surface present", source.includes("function IdentityCoverage"), "join coverage report is visible");
   assertCheck("depth partial status present", source.includes("unmapped athlete"), "depth-chart degradation is labeled");
+  assertCheck("signal join has recency guard", source.includes("idx.maxSeason-2") && source.includes("stale||rookie||teamConflict"), "stale/collision rows are rejected");
+  assertCheck("signal join avoids plain-name fallback", !/idx\.byName\[n\]/.test(source), "position/name candidates only");
 
   const babelUrl = "https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js";
   const res = await fetch(babelUrl);
