@@ -112,19 +112,14 @@ Done when:
 - In-season reports compare usage, props, and market movement honestly.
 - The feature can be disabled cleanly when lines are unavailable.
 
-### A. News — bug fix + source expansion
-Bug: when a player has no matched news, the player news panel currently populates around-the-league / random articles. That is misleading.
+### A. News — ✅ bug fix + source expansion (shipped)
+- Empty-state bug fixed; unrelated headlines live in a separate global wire.
+- **Multi-source aggregator shipped**: `spine/news.py` pulls NFL RSS from ESPN, PFT, CBS, Yahoo, Yardbarker (server-side — most block browser CORS), strips HTML, dedups, and entity-matches to `signal.json` players → `data/news.json`. `news.yml` refreshes every 4h. Frontend merges it with the live ESPN client feed; per-article source labels; player news matches across all sources. `validate.mjs` checks the artifact.
 
-Fix:
-- If a player has no matched news, show a clean empty state: "no recent matched headlines."
-- Do **not** show unrelated articles inside a player-specific news panel.
-- If we want general headlines, put them in a separately labeled global news wire.
-
-Expansion:
-- Pull in news from other prominent sports news websites beyond ESPN where feasible.
-- Likely sources to investigate: NFL.com, CBS Sports, Yahoo, Rotoworld/NBC, The Athletic headlines if legally/reachably available, team sites.
-- Many sources will block browser CORS; if so, build an Action-side `data/news.json` aggregator.
-- Eventually: identify reliable beat reporters and pull from their accounts/feed endpoints, then keyword/entity-match to players and teams.
+Remaining (future):
+- **Beat reporters** — identify reliable team beat writers and pull from their feed endpoints, then keyword/entity-match to players + teams.
+- Classify news by type (injury / depth / contract / transaction) and study which classes predict value movement (TAB outline `news` improvements).
+- NFL.com & Rotoworld/NBC fantasy RSS were 404 at probe time — revisit for working endpoints.
 
 ### B. Value-history backfill — decision pending
 History **is** recoverable from DynastyProcess git history (~349 dated commits), but those are **FantasyPros-ECR-derived**, not FantasyCalc — a *parallel* series, not a clean backfill of our moat. Decide:
