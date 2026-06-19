@@ -33,18 +33,6 @@ Done when:
 - Known integration failures surface as status, not silent UI weirdness.
 - The build/no-build decision has a documented boundary.
 
-#### Sprint 3 — Depth + identity coverage
-Goal: make provider joins auditable before leaning harder on model outputs.
-- Validate all 32 ESPN depth-chart mappings.
-- Decide whether WR should expose ESPN's slot/rank structure as WR1/WR2/slot.
-- Show partial/unmapped athlete status when ESPN depth data degrades.
-- Add an identity coverage report by source, season, position, and join method.
-
-Done when:
-- Depth charts have explicit fallback/partial-source indicators.
-- Join coverage gaps are visible instead of hidden inside player matching.
-- The highest-value missing joins are obvious enough to prioritize.
-
 #### Sprint 4 — Revealed-value hardening
 Goal: turn the existing trade solver into an inspectable value surface.
 - Live-verify revealed-preference solves on real Sleeper leagues.
@@ -154,10 +142,7 @@ Can't be validated until the season; build the scaffolding, prove it in the fall
 Revealed-values basis + contention-window tilt ship. Next: scale the consolidation tax by the league's actual roster/bench/taxi settings (vs the current flat 4%/body), and ultimately let the revealed-preference solver *learn* the discount.
 
 ### E. Depth charts — quality follow-up
-ESPN is now the primary source for team depth charts, with Sleeper as fallback. Remaining follow-up:
-- Validate all 32 ESPN team-id mappings after deployment.
-- Decide whether WR should display ESPN's slot/rank structure more explicitly (WR1/WR2/slot) instead of a single flattened list.
-- Add a small source/status label per team when ESPN returns partial or unmapped athletes.
+ESPN is now the primary source for team depth charts, with Sleeper as fallback. Sprint 3 shipped the all-team mapping smoke test, WR rank/slot display, and partial/unmapped labels. Next depth-chart work should focus on richer role semantics only if ESPN's structure proves stable during the season.
 
 ---
 
@@ -193,3 +178,4 @@ ESPN is now the primary source for team depth charts, with Sleeper as fallback. 
 - **Game-by-game stat logs** — click a season row inside stat history to expand ESPN regular-season game logs for that player/year.
 - **ESPN depth charts** — depth view now uses ESPN team depth charts as primary source, matched back to Sleeper by ESPN id / `data/espn_ids.json`; Sleeper depth is fallback only.
 - **Mode badge** — offseason/in-season indicator from Sleeper state.
+- **Depth + identity coverage** — ESPN depth mappings are validated across all 32 teams in the network smoke test; depth charts now label fallback/partial/unmapped athletes and preserve WR rank/slot hints; the spine emits `data/identity_coverage.json` so join coverage gaps are visible by source, season, position, and join method.

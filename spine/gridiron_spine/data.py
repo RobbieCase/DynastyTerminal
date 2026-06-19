@@ -159,6 +159,7 @@ def pull_espn_id_map(seasons):
         except Exception:
             return None
     rows = []
+    cov_rows = []
     for y in seasons:
         rd = None
         for tmpl in ROSTER_CANDIDATES:
@@ -178,11 +179,14 @@ def pull_espn_id_map(seasons):
         d["nkey"] = d[nm].map(_norm)
         d["espn_id"] = pd.to_numeric(d[eid], errors="coerce")
         d["pos"] = d[pos].astype(str)
-        d = d[d.pos.isin(["QB", "RB", "WR", "TE"])].dropna(subset=["espn_id"])
+        d = d[d.pos.isin(["QB", "RB", "WR", "TE"]) & d.nkey.astype(bool)]
         d["season"] = y
-        rows.append(d[["season", "nkey", "pos", "espn_id"]])
+        cov = d.copy()
+        cov["has_espn_id"] = cov["espn_id"].notna()
+        cov_rows.append(cov[["season", "nkey", "pos", "has_espn_id"]])
+        rows.append(d.dropna(subset=["espn_id"])[["season", "nkey", "pos", "espn_id"]])
     if not rows:
-        return {"by_pos_name": {}, "by_name": {}}
+        return {"by_pos_name": {}, "by_name": {}, "meta": {"coverage": []}}
     out = pd.concat(rows, ignore_index=True).sort_values("season")
     # Keep latest season's id per position/name.
     latest = out.groupby(["pos", "nkey"], as_index=False).last()
@@ -192,8 +196,24 @@ def pull_espn_id_map(seasons):
         ids = set(str(int(x)) for x in g.espn_id)
         if nkey and len(ids) == 1:
             by_name[nkey] = next(iter(ids))
+    coverage = []
+    if cov_rows:
+        cov = pd.concat(cov_rows, ignore_index=True).drop_duplicates(["season", "pos", "nkey"])
+        for r in (cov.groupby(["season", "pos"], as_index=False)
+                    .agg(total=("nkey", "nunique"), covered=("has_espn_id", "sum"))
+                    .itertuples()):
+            total, covered = int(r.total), int(r.covered)
+            coverage.append({
+                "source": "nflverse_rosters",
+                "season": int(r.season),
+                "position": r.pos,
+                "join_method": "name_position_to_espn_id",
+                "covered": covered,
+                "total": total,
+                "pct": round(covered / total, 3) if total else 0.0,
+            })
     print(f"  espn id map: {len(by_pos_name)} pos/name keys, {len(by_name)} unique-name keys")
-    return {"by_pos_name": by_pos_name, "by_name": by_name}
+    return {"by_pos_name": by_pos_name, "by_name": by_name, "meta": {"coverage": coverage}}
 
 def pull_fantasy_history(seasons):
     """Per-season fantasy PPG by player from nflverse stats_player_week — DEEP history for

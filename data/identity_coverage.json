@@ -1,0 +1,787 @@
+{
+  "meta": {
+    "note": "Coverage rows are grouped by source, season, position, and join method.",
+    "sources": [
+      "nflverse_air_yards",
+      "nflverse_snap",
+      "signal.json"
+    ]
+  },
+  "by_source": {
+    "nflverse_air_yards": {
+      "covered": 476,
+      "total": 1924,
+      "pct": 0.247
+    },
+    "nflverse_snap": {
+      "covered": 786,
+      "total": 1924,
+      "pct": 0.409
+    },
+    "signal.json": {
+      "covered": 1924,
+      "total": 1924,
+      "pct": 1
+    }
+  },
+  "rows": [
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 26,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 56,
+      "pct": 0.125
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 11,
+      "total": 53,
+      "pct": 0.208
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 21,
+      "total": 88,
+      "pct": 0.239
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 2,
+      "total": 20,
+      "pct": 0.1
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 8,
+      "total": 59,
+      "pct": 0.136
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 48,
+      "pct": 0.104
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 12,
+      "total": 74,
+      "pct": 0.162
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 16,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 51,
+      "pct": 0.098
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 4,
+      "total": 35,
+      "pct": 0.114
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 98,
+      "pct": 0.071
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 32,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 1,
+      "total": 57,
+      "pct": 0.018
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 51,
+      "pct": 0.137
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 125,
+      "pct": 0.04
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 3,
+      "total": 131,
+      "pct": 0.023
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 41,
+      "total": 242,
+      "pct": 0.169
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 119,
+      "total": 219,
+      "pct": 0.543
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 218,
+      "total": 443,
+      "pct": 0.492
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2021,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 26,
+      "pct": 0.192
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2021,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 16,
+      "total": 56,
+      "pct": 0.286
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2021,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 13,
+      "total": 53,
+      "pct": 0.245
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2021,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 22,
+      "total": 88,
+      "pct": 0.25
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2022,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 20,
+      "pct": 0.25
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2022,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 21,
+      "total": 59,
+      "pct": 0.356
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2022,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 11,
+      "total": 48,
+      "pct": 0.229
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2022,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 13,
+      "total": 74,
+      "pct": 0.176
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 4,
+      "total": 16,
+      "pct": 0.25
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 15,
+      "total": 51,
+      "pct": 0.294
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 35,
+      "pct": 0.2
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 98,
+      "pct": 0.092
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 2,
+      "total": 32,
+      "pct": 0.063
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 6,
+      "total": 57,
+      "pct": 0.105
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 51,
+      "pct": 0.176
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 125,
+      "pct": 0.072
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2025,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 81,
+      "total": 131,
+      "pct": 0.618
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2025,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 150,
+      "total": 242,
+      "pct": 0.62
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2025,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 143,
+      "total": 219,
+      "pct": 0.653
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2025,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 245,
+      "total": 443,
+      "pct": 0.553
+    },
+    {
+      "source": "signal.json",
+      "season": 2021,
+      "position": "QB",
+      "join_method": "hvpkod_player_id",
+      "covered": 26,
+      "total": 26,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2021,
+      "position": "RB",
+      "join_method": "hvpkod_player_id",
+      "covered": 56,
+      "total": 56,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2021,
+      "position": "TE",
+      "join_method": "hvpkod_player_id",
+      "covered": 53,
+      "total": 53,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2021,
+      "position": "WR",
+      "join_method": "hvpkod_player_id",
+      "covered": 88,
+      "total": 88,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2022,
+      "position": "QB",
+      "join_method": "hvpkod_player_id",
+      "covered": 20,
+      "total": 20,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2022,
+      "position": "RB",
+      "join_method": "hvpkod_player_id",
+      "covered": 59,
+      "total": 59,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2022,
+      "position": "TE",
+      "join_method": "hvpkod_player_id",
+      "covered": 48,
+      "total": 48,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2022,
+      "position": "WR",
+      "join_method": "hvpkod_player_id",
+      "covered": 74,
+      "total": 74,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2023,
+      "position": "QB",
+      "join_method": "hvpkod_player_id",
+      "covered": 16,
+      "total": 16,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2023,
+      "position": "RB",
+      "join_method": "hvpkod_player_id",
+      "covered": 51,
+      "total": 51,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2023,
+      "position": "TE",
+      "join_method": "hvpkod_player_id",
+      "covered": 35,
+      "total": 35,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2023,
+      "position": "WR",
+      "join_method": "hvpkod_player_id",
+      "covered": 98,
+      "total": 98,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2024,
+      "position": "QB",
+      "join_method": "hvpkod_player_id",
+      "covered": 32,
+      "total": 32,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2024,
+      "position": "RB",
+      "join_method": "hvpkod_player_id",
+      "covered": 57,
+      "total": 57,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2024,
+      "position": "TE",
+      "join_method": "hvpkod_player_id",
+      "covered": 51,
+      "total": 51,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2024,
+      "position": "WR",
+      "join_method": "hvpkod_player_id",
+      "covered": 125,
+      "total": 125,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2025,
+      "position": "QB",
+      "join_method": "hvpkod_player_id",
+      "covered": 131,
+      "total": 131,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2025,
+      "position": "RB",
+      "join_method": "hvpkod_player_id",
+      "covered": 242,
+      "total": 242,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2025,
+      "position": "TE",
+      "join_method": "hvpkod_player_id",
+      "covered": 219,
+      "total": 219,
+      "pct": 1
+    },
+    {
+      "source": "signal.json",
+      "season": 2025,
+      "position": "WR",
+      "join_method": "hvpkod_player_id",
+      "covered": 443,
+      "total": 443,
+      "pct": 1
+    }
+  ],
+  "priority_gaps": [
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 32,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 26,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 0,
+      "total": 16,
+      "pct": 0
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 1,
+      "total": 57,
+      "pct": 0.018
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 3,
+      "total": 131,
+      "pct": 0.023
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 125,
+      "pct": 0.04
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 2,
+      "total": 32,
+      "pct": 0.063
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 98,
+      "pct": 0.071
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 125,
+      "pct": 0.072
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 98,
+      "pct": 0.092
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 51,
+      "pct": 0.098
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 2,
+      "total": 20,
+      "pct": 0.1
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 48,
+      "pct": 0.104
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 6,
+      "total": 57,
+      "pct": 0.105
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2023,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 4,
+      "total": 35,
+      "pct": 0.114
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2021,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 56,
+      "pct": 0.125
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 8,
+      "total": 59,
+      "pct": 0.136
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2024,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 51,
+      "pct": 0.137
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2022,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 12,
+      "total": 74,
+      "pct": 0.162
+    },
+    {
+      "source": "nflverse_air_yards",
+      "season": 2025,
+      "position": "RB",
+      "join_method": "normalized_name_week",
+      "covered": 41,
+      "total": 242,
+      "pct": 0.169
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2022,
+      "position": "WR",
+      "join_method": "normalized_name_week",
+      "covered": 13,
+      "total": 74,
+      "pct": 0.176
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2024,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 9,
+      "total": 51,
+      "pct": 0.176
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2021,
+      "position": "QB",
+      "join_method": "normalized_name_week",
+      "covered": 5,
+      "total": 26,
+      "pct": 0.192
+    },
+    {
+      "source": "nflverse_snap",
+      "season": 2023,
+      "position": "TE",
+      "join_method": "normalized_name_week",
+      "covered": 7,
+      "total": 35,
+      "pct": 0.2
+    }
+  ]
+}

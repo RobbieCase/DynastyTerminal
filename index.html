@@ -138,10 +138,19 @@ function loadValueSeries(){
 function norm(s){return (s||"").toLowerCase().replace(/[.'’`]/g,"").replace(/\b(jr|sr|ii|iii|iv|v)\b/g,"").replace(/[^a-z ]/g," ").replace(/\s+/g," ").trim();}
 function fcVal(byId,byName,p){if(!byId||!p)return null;if(byId[p.player_id])return byId[p.player_id];if(byName){const o=byName[norm(p.full_name)];if(o)return o;}return null;}
 function findSleeper(players,name,pos){if(!players)return null;const n=norm(name);for(const id in players){const p=players[id];if(p.position===pos&&p.full_name&&norm(p.full_name)===n)return p;}return null;}
+function depthSlotLabel(slot){
+  if(slot==null||slot==="")return "";
+  if(typeof slot==="string"||typeof slot==="number")return String(slot).replace(/\s+/g,"");
+  if(slot.displayName)return String(slot.displayName).replace(/\s+/g,"");
+  if(slot.name)return String(slot.name).replace(/\s+/g,"");
+  if(slot.abbreviation)return String(slot.abbreviation).replace(/\s+/g,"");
+  return "";
+}
 const USAGE_ROWS={QB:[["pass yds/g","pas"],["rush yds/g","rush"],["carries/g","car"]],RB:[["touches/g","tch"],["carries/g","car"],["rz tch/g","rz"]],WR:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]],TE:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]]};
 const ESPN_TEAM_ID={ARI:22,ATL:1,BAL:33,BUF:2,CAR:29,CHI:3,CIN:4,CLE:5,DAL:6,DEN:7,DET:8,GB:9,HOU:34,IND:11,JAX:30,JAC:30,KC:12,LAC:24,LAR:14,LA:14,LV:13,OAK:13,MIA:15,MIN:16,NE:17,NO:18,NYG:19,NYJ:20,PHI:21,PIT:23,SEA:26,SF:25,TB:27,TEN:10,WAS:28,WSH:28};
 const _espnDepthCache={};
 const _espnAthleteCache={};
+let _identityCoveragePromise=null;
 function loadEspnDepth(team,season){
   const id=ESPN_TEAM_ID[team]; if(!id)return Promise.resolve(null);
   const yr=season||"2026", key=`${yr}|${team}`;
@@ -165,6 +174,10 @@ function loadEspnAthlete(id,season){
     return d&&d.displayName?d:null;
   }catch(e){return null;}})();
   return _espnAthleteCache[key];
+}
+function loadIdentityCoverage(){
+  if(!_identityCoveragePromise)_identityCoveragePromise=fetch("./data/identity_coverage.json").then(r=>r.ok?r.json():null).catch(()=>null);
+  return _identityCoveragePromise;
 }
 
 function App(){
@@ -441,16 +454,30 @@ function DepthChart({team,season,players,fc,fcName,pick,sel,onBack}){
       out[pos]=((bucket&&bucket.athletes)||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99)).map(a=>{
         const id=espnAthleteId(a.athlete), p=sleeperByEspn[id];
         const named=athleteNames[id], byName=named&&findSleeper(players,named,pos);
-        return p?{...p,_espnDepth:a.rank,_espnSlot:a.slot}:byName?{...byName,_espnDepth:a.rank,_espnSlot:a.slot}:{player_id:`espn-${id}`,full_name:named||`ESPN athlete ${id}`,position:pos,team,_espnDepth:a.rank,_espnSlot:a.slot};
+        return p?{...p,_espnDepth:a.rank,_espnSlot:a.slot}:byName?{...byName,_espnDepth:a.rank,_espnSlot:a.slot,_joinMethod:"name"}:{player_id:`espn-${id}`,full_name:named||`ESPN athlete ${id}`,position:pos,team,_espnDepth:a.rank,_espnSlot:a.slot,_unmapped:true};
       });
     });
     return out;
   },[espn,sleeperDepth,sleeperByEspn,athleteNames,players,team]);
   const source=espn&&espn.items?"ESPN":"Sleeper fallback";
+  const partial=useMemo(()=>{
+    if(espn===undefined)return {status:"loading ESPN",missing:[],unmapped:0};
+    if(!espn||!espn.items)return {status:"Sleeper fallback",missing:[],unmapped:0};
+    const offense=espn.items.find(i=>i.positions&&i.positions.qb&&i.positions.wr);
+    if(!offense)return {status:"ESPN partial",missing:["offense"],unmapped:0};
+    const missing=["QB","RB","WR","TE"].filter(pos=>!g[pos]||!g[pos].length);
+    const unmapped=["QB","RB","WR","TE"].reduce((n,pos)=>n+g[pos].filter(p=>p._unmapped).length,0);
+    return {status:(missing.length||unmapped)?"ESPN partial":"ESPN ok",missing,unmapped};
+  },[espn,g]);
   return (
   <div style={{marginTop:12}}>
     <div className="head" style={{marginBottom:10}}>
-      <div className="mono mut small">depth chart · <span style={{color:"var(--wr)",fontWeight:500}}>{team}</span> · skill positions · {espn===undefined?"loading ESPN…":source}</div>
+      <div>
+        <div className="mono mut small">depth chart · <span style={{color:"var(--wr)",fontWeight:500}}>{team}</span> · skill positions · {espn===undefined?"loading ESPN…":source}</div>
+        <div className="mono faint" style={{fontSize:10,marginTop:3}}>
+          {partial.status}{partial.missing.length?` · missing ${partial.missing.join("/")}`:""}{partial.unmapped?` · ${partial.unmapped} unmapped athlete${partial.unmapped===1?"":"s"}`:""}
+        </div>
+      </div>
       <button className="btn" onClick={onBack}>‹ back to player</button>
     </div>
     <div className="row" style={{gridTemplateColumns:"repeat(auto-fit,minmax(165px,1fr))"}}>
@@ -459,14 +486,15 @@ function DepthChart({team,season,players,fc,fcName,pick,sel,onBack}){
           <div className="lbl" style={{marginBottom:9,color:POS[pos]}}>{pos}</div>
           {g[pos].slice(0,CAP[pos]).map((p,i)=>{
             const v=fcVal(fc,fcName,p), a=ageFrom(p.birth_date), me=sel&&p.player_id===sel.player_id;
+            const slot=depthSlotLabel(p._espnSlot);
             return (
             <div key={p.player_id} onClick={()=>pick(p)}
               style={{display:"flex",alignItems:"baseline",gap:8,padding:"6px 0",cursor:"pointer",
                 borderBottom:i<Math.min(CAP[pos],g[pos].length)-1?"1px solid var(--line)":"none"}}>
-              <span className="mono small faint" style={{width:14}}>{p._espnDepth||i+1}</span>
+              <span className="mono small faint" style={{width:pos==="WR"?42:14}}>{pos==="WR"&&slot?`${p._espnDepth||i+1}·${slot}`:p._espnDepth||i+1}</span>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontWeight:me?600:400,color:me?"var(--wr)":"var(--tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{p.full_name}</div>
-                <div className="mono faint" style={{fontSize:10}}>{a?a.toFixed(1)+"y":""}{p.injury_status?" · "+p.injury_status:""}</div>
+                <div style={{fontWeight:me?600:400,color:me?"var(--wr)":p._unmapped?"var(--warn)":"var(--tx)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{p.full_name}</div>
+                <div className="mono faint" style={{fontSize:10}}>{p._unmapped?"unmapped athlete":p._joinMethod==="name"?"name join":a?a.toFixed(1)+"y":""}{p.injury_status?" · "+p.injury_status:""}</div>
               </div>
               {v&&<span className="mono small" style={{color:"var(--mut)"}}>{fmt(v.value)}</span>}
             </div>);
@@ -475,7 +503,7 @@ function DepthChart({team,season,players,fc,fcName,pick,sel,onBack}){
         </div>
       ))}
     </div>
-    <div className="note">built from ESPN's team depth chart when available, matched back to Sleeper by ESPN athlete id for values and player pages. if ESPN is unreachable, DWR falls back to Sleeper depth-chart order.</div>
+    <div className="note">built from ESPN's team depth chart when available, matched back to Sleeper by ESPN athlete id, then name as a labeled fallback. WR rows preserve ESPN rank/slot where supplied. if ESPN is unreachable, DWR falls back to Sleeper depth-chart order.</div>
   </div>);
 }
 function PriceHistory({sel,set}){
@@ -559,11 +587,12 @@ function GlobalNewsWire(){
     </div>);
 }
 function IntegrationStatus({players,pStatus,fc,fcStatus,sig,nflState,compact=false}){
-  const [remote,setRemote]=useState({ids:"check",news:"check",depth:"check"});
+  const [remote,setRemote]=useState({ids:"check",news:"check",depth:"check",coverage:"check"});
   useEffect(()=>{let dead=false;
     loadEspnIdMap().then(m=>{if(!dead)setRemote(s=>({...s,ids:m&&m.by_pos_name?"ok":"warn"}));});
     loadNews().then(n=>{if(!dead)setRemote(s=>({...s,news:n&&n.length?"ok":"warn"}));});
     loadEspnDepth("KC",nflState&&nflState.season).then(d=>{if(!dead)setRemote(s=>({...s,depth:d&&d.items?"ok":"warn"}));});
+    loadIdentityCoverage().then(d=>{if(!dead)setRemote(s=>({...s,coverage:d&&Array.isArray(d.rows)?"ok":"warn"}));});
     return ()=>{dead=true;};
   },[nflState&&nflState.season]);
   const sigCount=sig&&sig.players?Object.keys(sig.players).length:0;
@@ -573,6 +602,7 @@ function IntegrationStatus({players,pStatus,fc,fcStatus,sig,nflState,compact=fal
     {name:"FantasyCalc",status:fc?"ok":fcStatus&&fcStatus!=="loading values…"?"warn":"check",detail:fc?"market loaded":fcStatus||"loading"},
     {name:"signal.json",status:sigCount>1000?"ok":sig?"warn":"check",detail:sigCount?`${sigCount} players`:"loading"},
     {name:"espn_ids",status:remote.ids,detail:remote.ids==="ok"?"local map loaded":"checking"},
+    {name:"identity coverage",status:remote.coverage,detail:remote.coverage==="ok"?"join audit loaded":"checking"},
     {name:"ESPN news",status:remote.news,detail:remote.news==="ok"?"feed reachable":"checking"},
     {name:"ESPN depth",status:remote.depth,detail:remote.depth==="ok"?"sample reachable":"checking"}
   ];
@@ -597,6 +627,41 @@ function IntegrationStatus({players,pStatus,fc,fcStatus,sig,nflState,compact=fal
         ))}
       </div>
       <div className="note">local deploy checks are also available with <span className="mono">node scripts/validate.mjs</span>; add <span className="mono">--network</span> for live ESPN/Sleeper smoke checks.</div>
+    </div>);
+}
+function IdentityCoverage(){
+  const [cov,setCov]=useState(undefined);
+  useEffect(()=>{let dead=false;loadIdentityCoverage().then(d=>{if(!dead)setCov(d||null);});return ()=>{dead=true;};},[]);
+  if(cov===undefined)return <div className="panel pad" style={{marginTop:12}}><div className="lbl">identity coverage</div><div className="note">loading join audit…</div></div>;
+  if(!cov)return <div className="panel pad" style={{marginTop:12}}><div className="lbl">identity coverage</div><div className="note err">identity_coverage.json unavailable.</div></div>;
+  const by=cov.by_source||{};
+  const sources=Object.entries(by).sort((a,b)=>(a[0]).localeCompare(b[0]));
+  const gaps=(cov.priority_gaps||[]).slice(0,6);
+  const pct=o=>o&&o.total?`${Math.round(o.pct*100)}%`:"—";
+  return (
+    <div className="panel pad" style={{marginTop:12}}>
+      <div className="head" style={{marginBottom:8}}>
+        <div className="lbl">identity coverage</div>
+        <div className="mono faint" style={{fontSize:11}}>by source · season · position · join method</div>
+      </div>
+      <div className="row" style={{gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",marginTop:0}}>
+        {sources.map(([name,o])=>(
+          <div key={name} className="metric">
+            <div className="lbl">{name}</div>
+            <div className="v" style={{fontSize:18,color:o.pct>=.8?"var(--buy)":o.pct>=.4?"var(--warn)":"var(--err)"}}>{pct(o)}</div>
+            <div className="mono faint" style={{fontSize:10}}>{o.covered}/{o.total} joined</div>
+          </div>
+        ))}
+      </div>
+      {!!gaps.length&&<div style={{marginTop:10,display:"grid",gap:6}}>
+        {gaps.map((g,i)=>(
+          <div key={i} className="mono small" style={{display:"flex",gap:8,justifyContent:"space-between",borderTop:i?"1px solid var(--line)":"none",paddingTop:i?6:0}}>
+            <span>{g.source} · {g.season} · {g.position} · {g.join_method}</span>
+            <span style={{color:"var(--warn)"}}>{Math.round(g.pct*100)}%</span>
+          </div>
+        ))}
+      </div>}
+      <div className="note">generated by the spine from provider joins. gaps here are the next audit list before model outputs lean harder on snap, air-yards, ESPN ids, or name matching.</div>
     </div>);
 }
 // ESPN athlete stats — year-by-year, keyed by espn_id (which Sleeper provides), client-side.
@@ -1589,6 +1654,7 @@ function Tutorial({players,pStatus,fc,fcStatus,sig,nflState}){
       <div className="small mut">A worked example. Every metric below is hover-explained; the full glossary is underneath for mobile.</div>
     </div>
     <IntegrationStatus {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
+    <IdentityCoverage/>
     <div className="panel pad" style={{marginTop:12}}>
       <div style={{fontSize:20,fontWeight:600}}>J. Example <span className="mono small mut" style={{fontWeight:400}}>· WR · DAL · 24.3y</span></div>
       <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>

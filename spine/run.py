@@ -9,6 +9,34 @@ SEASONS = [2021, 2022, 2023, 2024, 2025]
 FEATS = ["early_ppg", "z_opp"]
 SIM_COLS = ["tgt", "tch", "rz", "shr", "car", "rush", "pas", "pts"]
 
+def identity_coverage(feed_df, espn_ids):
+    """Audit provider joins by source, season, position, and join method."""
+    rows = []
+    for (season, pos), g in feed_df.groupby(["season", "pos"]):
+        total = int(g.PlayerId.nunique())
+        rows.append({"source": "signal.json", "season": int(season), "position": pos,
+                     "join_method": "hvpkod_player_id", "covered": total, "total": total,
+                     "pct": 1.0})
+        for col, source in [("snap", "nflverse_snap"), ("ay", "nflverse_air_yards")]:
+            covered = int(g.loc[g[col] > 0, "PlayerId"].nunique()) if col in g else 0
+            rows.append({"source": source, "season": int(season), "position": pos,
+                         "join_method": "normalized_name_week", "covered": covered,
+                         "total": total, "pct": round(covered / total, 3) if total else 0.0})
+    rows.extend((espn_ids.get("meta") or {}).get("coverage") or [])
+    rows = sorted(rows, key=lambda r: (str(r["source"]), int(r["season"]), str(r["position"]), str(r["join_method"])))
+    by_source = {}
+    for source in sorted({r["source"] for r in rows}):
+        ss = [r for r in rows if r["source"] == source]
+        covered = sum(int(r["covered"]) for r in ss)
+        total = sum(int(r["total"]) for r in ss)
+        by_source[source] = {"covered": covered, "total": total,
+                             "pct": round(covered / total, 3) if total else 0.0}
+    gaps = sorted([r for r in rows if r["total"] and r["pct"] < 0.8],
+                  key=lambda r: (r["pct"], -r["total"]))[:24]
+    return {"meta": {"note": "Coverage rows are grouped by source, season, position, and join method.",
+                     "sources": sorted(by_source.keys())},
+            "by_source": by_source, "rows": rows, "priority_gaps": gaps}
+
 def comps_for(feed_df, k=4):
     """Nearest-neighbour statistical comps within position, on standardized usage+production."""
     out = {}
@@ -94,8 +122,12 @@ def main():
         json.dump(feed, f, indent=2)
     with open(os.path.join(DATA, "espn_ids.json"), "w") as f:
         json.dump(espn_ids, f)
+    coverage = identity_coverage(feed_df, espn_ids)
+    with open(os.path.join(DATA, "identity_coverage.json"), "w") as f:
+        json.dump(coverage, f, indent=2)
     print(f"\nwrote data/signal.json — {len(feed['players'])} players, by pos {by_pos}")
     print(f"wrote data/espn_ids.json — {len(espn_ids.get('by_pos_name', {}))} keys")
+    print(f"wrote data/identity_coverage.json — {len(coverage['rows'])} coverage rows")
 
 if __name__ == "__main__":
     main()
