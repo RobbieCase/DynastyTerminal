@@ -120,6 +120,21 @@ function intrinsicOf(market,trend,pos,age,gap){
   const intrinsic=market*ageMult(pos,age)*(1+mom)*(1+gapTilt);
   return {intrinsic, edge:(intrinsic-market)/market*100};
 }
+const clamp01=x=>Math.max(0,Math.min(1,x));
+function sleeperScoreOf({market,trend,pos,age,z_opp,gap,flag,revDelta,revAnchored,snap,ay,edge}){
+  if(market==null&&z_opp==null&&gap==null)return null;
+  const gapN=clamp01(((gap||0)+0.45)/2.35);
+  const oppN=clamp01(((z_opp||0)+0.35)/2.7);
+  const roleN=clamp01(((snap!=null?snap:oppN)*0.65)+((ay!=null?ay:oppN)*0.35));
+  const priceN=market==null?0.45:1-clamp01((Math.log10(Math.max(1,market))-2.6)/1.45);
+  const peak={QB:31,RB:25.5,WR:27.5,TE:28.5}[pos]||27;
+  const youthN=age==null?0.5:clamp01((peak-age+3)/6);
+  const trendN=market&&trend!=null?clamp01((0.04-(trend/market))/0.14):0.5;
+  const revealedN=revDelta==null||revAnchored?0.5:clamp01((5-revDelta)/25);
+  const edgeN=edge==null?0.5:clamp01((edge+5)/20);
+  const score=100*(0.25*gapN+0.15*(flag==="buy"?1:0)+0.15*oppN+0.10*roleN+0.12*priceN+0.10*youthN+0.07*trendN+0.04*revealedN+0.02*edgeN);
+  return Math.round(score);
+}
 const fmt=n=>n==null?"—":Math.round(n).toLocaleString();
 // daily value snapshots live on the orphan 'data' branch (the moat clock). Fetch the
 // listing + each file once and cache; returns [{date, sets:{label:{sleeperId:{v,...}}}}].
@@ -190,7 +205,9 @@ function saveRevealedLocal(obj){
 }
 function revealedVal(store,p){return store&&store.values&&p?store.values[p.player_id]:null;}
 function revealedDelta(store,p,market){
-  const r=revealedVal(store,p); return r!=null&&market?{revealed:r,delta:(r-market)/market*100}:null;
+  if(!store||!p||!market)return null;
+  const r=revealedVal(store,p);
+  return r!=null?{revealed:r,delta:(r-market)/market*100,anchored:false}:{revealed:market,delta:0,anchored:true};
 }
 
 function App(){
@@ -221,6 +238,7 @@ function App(){
   useEffect(()=>{try{const s=localStorage.getItem("dwr_myleague");if(s)setMyLeague(JSON.parse(s));}catch(e){}},[]);
   const [revealedSolve,setRevealedSolve]=useState(null);
   const [revealedStatus,setRevealedStatus]=useState("");
+  const autoRevealKey=useRef(null);
   useEffect(()=>{
     const lid=(league&&league.league_id)||(myLeague&&myLeague.leagueId);
     const sy=(league&&league.season)||(myLeague&&myLeague.season)||season;
@@ -321,6 +339,18 @@ function App(){
       return obj;
     }catch(e){setRevealedStatus("solve failed — using market");throw e;}
   }
+  useEffect(()=>{
+    const target=league||myLeague;
+    const lid=target&&(target.league_id||target.leagueId);
+    const sy=(target&&(target.season||target.seasonId))||season;
+    if(!lid||!fc||!players||revealedSolve)return;
+    const cached=loadRevealedLocal(lid,sy);
+    if(cached){setRevealedSolve(cached);return;}
+    const key=`${lid}|${sy}`;
+    if(autoRevealKey.current===key)return;
+    autoRevealKey.current=key;
+    solveRevealedLeague(target).catch(()=>{});
+  },[league&&league.league_id,myLeague&&myLeague.leagueId,season,fc,players,revealedSolve]);
 
   return (
   <div className="wrap">
@@ -956,7 +986,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
           </div>
           <div className="note">source split: market = FantasyCalc at the selected format; DWR intrinsic v0 = market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). still a placeholder; survival-curve aging + the revealed-preference trade-solve replace it.</div>
         </div>
-        {revealedSolve&&<div className="panel pad" style={{marginTop:12,borderColor:rev?"rgba(45,212,167,.42)":"var(--line2)"}}>
+        {revealedSolve&&<div className="panel pad" style={{marginTop:12,borderColor:rev&&!rev.anchored?"rgba(45,212,167,.42)":"var(--line2)"}}>
           <div className="head" style={{marginBottom:8}}>
             <div className="lbl">revealed value · {myLeague?myLeague.leagueName:"saved league"}</div>
             <div className="mono faint" style={{fontSize:11}}>{revealedSolve.trades||0} trades · {revealedSolve.solved||0} solved</div>
@@ -964,10 +994,10 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
           {rev?<>
             <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)",marginTop:0}}>
               <div className="metric"><div className="lbl">market</div><div className="v">{fmt(market)}</div></div>
-              <div className="metric"><div className="lbl">revealed</div><div className="v" style={{color:"var(--wr)"}}>{fmt(rev.revealed)}</div></div>
-              <div className="metric"><div className="lbl">delta</div><div className="v" style={{color:rev.delta>=0?"var(--buy)":"var(--sell)"}}>{rev.delta>=0?"+":""}{rev.delta.toFixed(0)}%</div></div>
+              <div className="metric"><div className="lbl">revealed</div><div className="v" style={{color:rev.anchored?"var(--mut)":"var(--wr)"}}>{fmt(rev.revealed)}</div></div>
+              <div className="metric"><div className="lbl">delta</div><div className="v" style={{color:rev.anchored?"var(--faint)":rev.delta>=0?"var(--buy)":"var(--sell)"}}>{rev.delta>=0?"+":""}{rev.delta.toFixed(0)}%</div></div>
             </div>
-            <div className="note">league-specific revealed-preference value solved from completed Sleeper trades, anchored to FantasyCalc market. this is separate from DWR intrinsic v0.</div>
+            <div className="note">{rev.anchored?"this player was not solved directly from your league's completed trades, so revealed surfaces keep them market-anchored.":"league-specific revealed-preference value solved from completed Sleeper trades, anchored to FantasyCalc market."} this is separate from DWR intrinsic v0.</div>
           </>:<div className="note">this player was not solved directly from your league's completed trades, so revealed surfaces keep them market-anchored.</div>}
         </div>}
       </div>
@@ -1586,9 +1616,10 @@ function SimTerminal({league,teams,fc}){
 
 function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
   const [pos,setPos]=useState("ALL");
-  const [sortK,setSortK]=useState("edge");
+  const [sortK,setSortK]=useState("sleeper");
   const [dir,setDir]=useState(-1);          // -1 desc, 1 asc
   const [buysOnly,setBuysOnly]=useState(false);
+  const [sleepersOnly,setSleepersOnly]=useState(false);
   const [q,setQ]=useState("");
   const CAP=120;
 
@@ -1606,8 +1637,9 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
       const z_opp=sp?sp.z_opp:null, gap=sp?sp.gap:null, flag=sp?sp.flag:null;
       const {intrinsic,edge}=intrinsicOf(market,trend,p.position,age,gap);
       const rev=revealedDelta(revealedSolve,p,market);
+      const sleeper=sleeperScoreOf({market,trend,pos:p.position,age,z_opp,gap,flag,revDelta:rev&&rev.delta,revAnchored:rev&&rev.anchored,snap:sp&&sp.snap,ay:sp&&sp.ay,edge});
       if(market==null&&!sp)continue;        // skip players with neither price nor signal
-      out.push({p,name:p.full_name,pos:p.position,team:p.team,market,intrinsic,edge,revDelta:rev&&rev.delta,z_opp,gap,flag});
+      out.push({p,name:p.full_name,pos:p.position,team:p.team,market,intrinsic,edge,sleeper,revDelta:rev&&rev.delta,revAnchored:rev&&rev.anchored,z_opp,gap,flag});
     }
     return out;
   },[players,fc,fcName,sig,revealedSolve]);
@@ -1616,6 +1648,7 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
     let r=rows;
     if(pos!=="ALL")r=r.filter(x=>x.pos===pos);
     if(buysOnly)r=r.filter(x=>x.flag==="buy");
+    if(sleepersOnly)r=r.filter(x=>x.sleeper>=70);
     if(q.trim()){const s=q.toLowerCase();r=r.filter(x=>x.name.toLowerCase().includes(s));}
     return r.slice().sort((a,b)=>{
       if(sortK==="name")return dir*a.name.localeCompare(b.name);
@@ -1623,12 +1656,13 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
       if(av==null&&bv==null)return 0; if(av==null)return 1; if(bv==null)return -1;  // nulls last
       return dir*(av-bv);
     });
-  },[rows,pos,buysOnly,q,sortK,dir]);
+  },[rows,pos,buysOnly,sleepersOnly,q,sortK,dir]);
 
   const flags=filtered.filter(r=>r.flag==="buy").length;
+  const sleepers=filtered.filter(r=>r.sleeper>=70).length;
   function sortBy(k){if(k===sortK)setDir(d=>-d);else{setSortK(k);setDir(k==="name"?1:-1);}}
   const arrow=k=>sortK===k?(dir===-1?" ▼":" ▲"):"";
-  const COLS=[["market","value"],["intrinsic","intrinsic"],["edge","edge"],["revDelta","rev Δ"],["z_opp","usage z"],["gap","gap"]];
+  const COLS=[["sleeper","sleeper"],["market","value"],["edge","edge"],["revDelta","rev Δ"],["z_opp","usage z"],["gap","gap"]];
   const GRID="26px minmax(140px,1.5fr) 76px 78px 66px 58px 66px 60px 46px";
   const HCell=({k,label,r})=>(
     <span onClick={()=>sortBy(k)} className="lbl" style={{cursor:"pointer",textAlign:r?"right":"left",whiteSpace:"nowrap",color:sortK===k?"var(--wr)":"var(--faint)"}}>{label}{arrow(k)}</span>);
@@ -1638,7 +1672,7 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
     <div className="panel pad">
       <div className="head" style={{marginBottom:10}}>
         <div className="lbl">screener · mispricing board</div>
-        <div className="mono faint" style={{fontSize:11}}>{filtered.length} players · {flags} buy flags</div>
+        <div className="mono faint" style={{fontSize:11}}>{filtered.length} players · {sleepers} sleepers · {flags} buy flags</div>
       </div>
       <div className="selset" style={{marginTop:0}}>
         <span className="lbl">pos</span>
@@ -1646,6 +1680,7 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
           <span key={P} className={"toggle"+(pos===P?" on":"")} onClick={()=>setPos(P)}
             style={pos===P&&P!=="ALL"?{color:POS[P],borderColor:POS[P]}:{}}>{P.toLowerCase()}</span>))}
         <span style={{width:1,height:18,background:"var(--line2)",margin:"0 3px"}}></span>
+        <span className={"toggle"+(sleepersOnly?" on":"")} onClick={()=>setSleepersOnly(b=>!b)}>sleepers</span>
         <span className={"toggle"+(buysOnly?" on":"")} onClick={()=>setBuysOnly(b=>!b)}>buy flags</span>
         <input className="field" style={{flex:"1 1 160px",padding:"6px 10px",fontSize:12}} placeholder="filter by name…" value={q} onChange={e=>setQ(e.target.value)}/>
       </div>
@@ -1670,10 +1705,10 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
               <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",fontSize:13}}>{x.name}</span>
               <span className="mono faint" style={{fontSize:10}}>{x.team}</span>
             </span>
+            <span className="mono small" style={{textAlign:"right",color:x.sleeper==null?"var(--faint)":x.sleeper>=70?"var(--buy)":x.sleeper>=55?"var(--wr)":"var(--mut)"}}>{x.sleeper!=null?x.sleeper:"—"}</span>
             <span className="mono small" style={{textAlign:"right",color:"var(--tx)"}}>{x.market!=null?fmt(x.market):"—"}</span>
-            <span className="mono small" style={{textAlign:"right",color:x.intrinsic!=null?"var(--wr)":"var(--faint)"}}>{x.intrinsic!=null?fmt(x.intrinsic):"—"}</span>
             <span className="mono small" style={{textAlign:"right",color:x.edge==null?"var(--faint)":x.edge>3?"var(--buy)":x.edge<-3?"var(--sell)":"var(--mut)"}}>{x.edge!=null?(x.edge>=0?"+":"")+x.edge.toFixed(1)+"%":"—"}</span>
-            <span className="mono small" style={{textAlign:"right",color:x.revDelta==null?"var(--faint)":x.revDelta>=0?"var(--buy)":"var(--sell)"}}>{x.revDelta!=null?(x.revDelta>=0?"+":"")+x.revDelta.toFixed(0)+"%":"—"}</span>
+            <span className="mono small" title={x.revAnchored?"market-anchored: no direct league trade solve for this player":""} style={{textAlign:"right",color:x.revDelta==null||x.revAnchored?"var(--faint)":x.revDelta>=0?"var(--buy)":"var(--sell)"}}>{x.revDelta!=null?(x.revDelta>=0?"+":"")+x.revDelta.toFixed(0)+"%":"—"}</span>
             <span className="mono small" style={{textAlign:"right",color:x.z_opp!=null?"var(--tx)":"var(--faint)"}}>{x.z_opp!=null?(x.z_opp>=0?"+":"")+x.z_opp.toFixed(1):"—"}</span>
             <span className="mono small" style={{textAlign:"right",color:x.gap==null?"var(--faint)":x.gap>0?"var(--buy)":"var(--mut)"}}>{x.gap!=null?(x.gap>=0?"+":"")+x.gap.toFixed(1):"—"}</span>
             <span style={{textAlign:"right"}}>{x.flag==="buy"?<span className="mono" style={{color:"var(--buy)",fontSize:10}}>buy</span>:<span className="faint">·</span>}</span>
@@ -1683,7 +1718,7 @@ function Screener({players,fc,fcName,sig,set,pick,revealedSolve}){
     </div>
     {filtered.length>CAP&&<div className="note">showing top {CAP} of {filtered.length} — narrow with the position / name filters.</div>}
     <div className="note">
-      click any row to open the player. market value comes from FantasyCalc{!fc&&" (load on deploy)"}; intrinsic/edge are DWR v0 reads from market + age/momentum + usage gap. rev Δ appears after solving a saved league's revealed values and stays separate from intrinsic.
+      click any row to open the player. sleeper is an MVP 0-100 target score: usage gap + opportunity + role share + cheaper price + youth + lagging market + league revealed discount. edge remains DWR intrinsic vs FantasyCalc market; rev Δ appears after solving a saved league; faint +0% means market-anchored with no direct league trade solve.
     </div>
   </div>);
 }
@@ -1692,6 +1727,7 @@ const GLOSSARY=[
   ["market value","FantasyCalc's trade value — derived from real trades across thousands of leagues, at your league format. The crowd's price, not DWR's proprietary value."],
   ["intrinsic · v0","DWR's current intrinsic read: market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). Still a placeholder for survival-curve aging + the trade-solve."],
   ["edge","(intrinsic − market) / market. Positive = read as underpriced vs the market. Now driven partly by the backtested usage gap, so it reflects signal — not just the age tier."],
+  ["sleeper","MVP 0-100 target score: usage gap + opportunity + role share + cheaper price + youth + lagging market + league revealed discount. 70+ is the first-pass sleeper line."],
   ["usage z · opp","How a player's opportunity ranks vs their position that season, in standard deviations. +2σ ≈ elite usage, 0 ≈ average."],
   ["usage gap","opportunity z minus scoring z. Positive = getting the opportunity but not yet scoring it — a positive-regression / buy lean."],
   ["flag · buy","Top-quartile usage gap within position. Backtested: these flags improved their later scoring above the base rate."],
