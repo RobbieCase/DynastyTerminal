@@ -411,11 +411,6 @@ function App(){
       ? <Tutorial {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
       : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch,nflState,myLeague,revealedSolve}}/>}
 
-    <IntegrationStatus compact {...{players,pStatus,fc,fcStatus,sig,nflState}}/>
-    <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
-      live now: Sleeper data + league sync, trending adds, ESPN global/player news, FantasyCalc market values, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
-      still ahead: survival-curve aging to replace v0 intrinsic, vegas prop-implied points (waiting on the season), and richer news/FAAB aggregation.
-    </div>
   </div>);
 }
 
