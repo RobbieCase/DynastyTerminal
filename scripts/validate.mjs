@@ -48,7 +48,7 @@ async function checkIndex() {
   assertCheck("integration status present", source.includes("function IntegrationStatus"), "runtime source status panel exists");
   assertCheck("identity coverage surface present", source.includes("function IdentityCoverage"), "join coverage report is visible");
   assertCheck("depth partial status present", source.includes("unmapped athlete"), "depth-chart degradation is labeled");
-  assertCheck("signal join has recency guard", source.includes("idx.maxSeason-2") && source.includes("stale||rookie||teamConflict"), "stale/collision rows are rejected");
+  assertCheck("signal join has recency guard", source.includes("idx.maxSeason-2") && source.includes("stale||rookie") && source.includes("_teamConflict") && source.includes("preferred||scored"), "stale/rookie rows rejected; team moves are labeled fallback");
   assertCheck("signal join avoids plain-name fallback", !/idx\.byName\[n\]/.test(source), "position/name candidates only");
   assertCheck("ESPN id join avoids plain-name fallback", !/by_name&&m\.by_name\[n\]|idMap\.by_name/.test(source), "position/name ESPN id map only");
   assertCheck("stale stat history hidden", source.includes("seasonNow-latest>2"), "old ESPN stat rows do not look current");

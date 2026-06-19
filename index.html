@@ -163,6 +163,14 @@ function depthSlotLabel(slot){
 }
 const USAGE_ROWS={QB:[["pass yds/g","pas"],["rush yds/g","rush"],["carries/g","car"]],RB:[["touches/g","tch"],["carries/g","car"],["rz tch/g","rz"]],WR:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]],TE:[["targets/g","tgt"],["tgt share","shr"],["rz tgt/g","rz"]]};
 const ESPN_TEAM_ID={ARI:22,ATL:1,BAL:33,BUF:2,CAR:29,CHI:3,CIN:4,CLE:5,DAL:6,DEN:7,DET:8,GB:9,HOU:34,IND:11,JAX:30,JAC:30,KC:12,LAC:24,LAR:14,LA:14,LV:13,OAK:13,MIA:15,MIN:16,NE:17,NO:18,NYG:19,NYJ:20,PHI:21,PIT:23,SEA:26,SF:25,TB:27,TEN:10,WAS:28,WSH:28};
+const NFL_TEAM_TERMS={
+  ARI:["Cardinals","Arizona"],ATL:["Falcons","Atlanta"],BAL:["Ravens","Baltimore"],BUF:["Bills","Buffalo"],CAR:["Panthers","Carolina"],CHI:["Bears","Chicago"],
+  CIN:["Bengals","Cincinnati"],CLE:["Browns","Cleveland"],DAL:["Cowboys","Dallas"],DEN:["Broncos","Denver"],DET:["Lions","Detroit"],GB:["Packers","Green Bay"],
+  HOU:["Texans","Houston"],IND:["Colts","Indianapolis"],JAX:["Jaguars","Jacksonville"],JAC:["Jaguars","Jacksonville"],KC:["Chiefs","Kansas City"],LAC:["Chargers","Los Angeles"],
+  LAR:["Rams","Los Angeles"],LA:["Rams","Los Angeles"],LV:["Raiders","Las Vegas"],MIA:["Dolphins","Miami"],MIN:["Vikings","Minnesota"],NE:["Patriots","New England"],
+  NO:["Saints","New Orleans"],NYG:["Giants","New York"],NYJ:["Jets","New York"],PHI:["Eagles","Philadelphia"],PIT:["Steelers","Pittsburgh"],SEA:["Seahawks","Seattle"],
+  SF:["49ers","Niners","San Francisco"],TB:["Buccaneers","Bucs","Tampa Bay"],TEN:["Titans","Tennessee"],WAS:["Commanders","Washington"],WSH:["Commanders","Washington"]
+};
 const _espnDepthCache={};
 const _espnAthleteCache={};
 let _identityCoveragePromise=null;
@@ -426,7 +434,7 @@ function App(){
     <GlobalNewsWire/>
 
     {view==="league"
-      ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague,revealedSolve,revealedStatus,solveRevealedLeague}}/>
+      ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague,revealedSolve,revealedStatus,solveRevealedLeague,sig}}/>
       : view==="depth"
       ? <DepthChart {...{team:depthTeam,season:nflState&&nflState.season,players,fc,fcName,pick,sel,onBack:()=>setView("player")}}/>
       : view==="trade"
@@ -607,6 +615,7 @@ function PriceHistory({sel,set}){
 // ESPN's public NFL news feed (CORS-friendly). Fetched once, cached; entity- + text-matched
 // to players. 39/50 articles carry explicit athlete tags, with a name-text fallback.
 let _newsPromise=null;
+const _playerSearchNewsCache={};
 function loadNews(){
   if(_newsPromise)return _newsPromise;
   _newsPromise=(async()=>{
@@ -631,6 +640,33 @@ function loadNews(){
   })().catch(()=>[]);
   return _newsPromise;
 }
+function loadPlayerSearchNews(sel){
+  if(!sel||!sel.full_name)return Promise.resolve([]);
+  const key=`${sel.player_id||sel.full_name}|${sel.team||""}`;
+  if(_playerSearchNewsCache[key])return _playerSearchNewsCache[key];
+  _playerSearchNewsCache[key]=(async()=>{
+    const q=[sel.full_name,sel.team].filter(Boolean).join(" ");
+    const u=`https://site.web.api.espn.com/apis/search/v2?query=${encodeURIComponent(q)}&limit=20`;
+    const d=await jget(u);
+    const group=(d.results||[]).find(g=>g.type==="article");
+    const cutoff=Date.now()-14*864e5;
+    const nm=norm(sel.full_name), nameParts=nm.split(" ").filter(Boolean), last=nameParts[nameParts.length-1]||"";
+    const teamTerms=(NFL_TEAM_TERMS[sel.team]||[]).map(norm);
+    const rows=((group&&group.contents)||[]).map(a=>{
+      const title=a.displayName||a.name||"", published=a.date||a.published||null;
+      const t=published?new Date(published).getTime():0;
+      const href=a.link&&a.link.web, text=norm(title);
+      return {headline:title, desc:"", published, href:a.link&&a.link.web, source:"ESPN search",
+        athletes:[nm], text, searchFallback:true, _time:t,
+        _isNfl:href&&href.includes("/nfl/"), _exact:text.includes(nm),
+        _team:teamTerms.some(t=>text.includes(t)), _last:last.length>3&&text.includes(last)};
+    }).filter(a=>a.headline&&a.href&&a._isNfl&&(!a._time||a._time>=cutoff));
+    const direct=rows.filter(a=>a._exact||(a._last&&a._team));
+    if(direct.length)return direct.map(a=>({...a,source:"ESPN search"}));
+    return rows.filter(a=>a._team).slice(0,3).map(a=>({...a,source:"ESPN team search"}));
+  })().catch(()=>[]);
+  return _playerSearchNewsCache[key];
+}
 function NewsItem({a}){
   const dt=(()=>{try{return new Date(a.published).toLocaleDateString(undefined,{month:"short",day:"numeric"});}catch(e){return"";}})();
   return (
@@ -644,7 +680,14 @@ function NewsItem({a}){
 function GlobalNewsWire(){
   const [news,setNews]=useState(null);
   useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
-  const items=(news&&news.length?news:[{headline:"loading ESPN headlines",href:null,published:null}]).slice(0,8);
+  const items=useMemo(()=>{
+    if(!(news&&news.length))return [{headline:"loading news headlines",href:null,published:null,source:"news"}];
+    const bySource={},picked=[],seen=new Set();
+    news.forEach(a=>{const s=a.source||"news"; if(!bySource[s])bySource[s]=a;});
+    Object.values(bySource).forEach(a=>{picked.push(a);seen.add(norm(a.headline));});
+    news.forEach(a=>{const k=norm(a.headline);if(picked.length<8&&!seen.has(k)){picked.push(a);seen.add(k);}});
+    return picked.slice(0,8);
+  },[news]);
   return (
     <div className="wire" style={{marginTop:8}}>
       <span className="wdot" style={{background:"var(--warn)"}}></span><span className="lbl" style={{flex:"none"}}>global news · multi-source</span>
@@ -652,7 +695,7 @@ function GlobalNewsWire(){
         <div className="wtrack">
           {[...items,...items].map((a,i)=>(
             <a key={i} href={a.href||undefined} target="_blank" rel="noopener noreferrer" className="witem" style={{textDecoration:"none"}}>
-              <b>{a.headline}</b>
+              <span className="mono faint" style={{fontSize:10}}>{(a.source||"news").toLowerCase()}</span> <b>{a.headline}</b>
             </a>
           ))}
         </div>
@@ -676,7 +719,7 @@ function IntegrationStatus({players,pStatus,fc,fcStatus,sig,nflState,compact=fal
     {name:"signal.json",status:sigCount>1000?"ok":sig?"warn":"check",detail:sigCount?`${sigCount} players`:"loading"},
     {name:"espn_ids",status:remote.ids,detail:remote.ids==="ok"?"local map loaded":"checking"},
     {name:"identity coverage",status:remote.coverage,detail:remote.coverage==="ok"?"join audit loaded":"checking"},
-    {name:"ESPN news",status:remote.news,detail:remote.news==="ok"?"feed reachable":"checking"},
+    {name:"news",status:remote.news,detail:remote.news==="ok"?"multi-source feed reachable":"checking"},
     {name:"ESPN depth",status:remote.depth,detail:remote.depth==="ok"?"sample reachable":"checking"}
   ];
   const col=s=>s==="ok"?"var(--buy)":s==="warn"?"var(--warn)":"var(--faint)";
@@ -852,17 +895,18 @@ function StatHistory({sel,currentSeason}){
 }
 function PlayerNews({sel}){
   const [news,setNews]=useState(null);
-  useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
+  useEffect(()=>{let dead=false;Promise.all([loadNews(),loadPlayerSearchNews(sel)]).then(([n,s])=>{if(!dead)setNews([...(n||[]),...(s||[])]);});return ()=>{dead=true;};},[sel.player_id]);
   if(news===null)return <div className="stub" style={{marginTop:12}}>loading news…</div>;
   const nm=norm(sel.full_name);
-  const mine=news.filter(a=>a.athletes.includes(nm)||(nm.length>4&&a.text.includes(nm)));
+  const seen=new Set();
+  const mine=news.filter(a=>a.athletes.includes(nm)||(nm.length>4&&a.text.includes(nm))).filter(a=>{const k=norm(a.headline);if(seen.has(k))return false;seen.add(k);return true;});
   const srcs=[...new Set(mine.map(a=>a.source))];
   return (
   <div className="panel pad" style={{marginTop:12}}>
     <div className="lbl" style={{marginBottom:8}}>player news · {sel.full_name} · matched{srcs.length?` · ${srcs.length} source${srcs.length>1?"s":""}`:""}</div>
     {mine.length?mine.slice(0,8).map((a,i)=><NewsItem key={i} a={a}/>)
       :<div className="stub" style={{marginTop:0}}>no recent matched headlines.</div>}
-    <div className="note">matched to this player by entity tag + name across ESPN, PFT, CBS, Yahoo &amp; Yardbarker. unrelated league headlines stay in the separate global news wire above.</div>
+    <div className="note">matched by source entity tag/name across ESPN, PFT, CBS, Yahoo &amp; Yardbarker, with labeled ESPN search fallback for recent player-related articles. unrelated league headlines stay in the separate global news wire above.</div>
   </div>);
 }
 function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){
@@ -1028,7 +1072,7 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
           <div className="metric"><div className="lbl">flag</div><div className="v" style={{color:sigP.flag==="buy"?"var(--buy)":"var(--mut)"}}>{sigP.flag||"—"}</div></div>
         </div>
         {sigMeta&&sigMeta.backtest&&(()=>{const yr=Object.keys(sigMeta.backtest).pop();const b=sigMeta.backtest[yr];return (
-          <div className="note">source: spine-generated signal.json. backtest {yr}, out-of-sample: top-quartile gap flags improved later at {(b.flag_improve_rate*100).toFixed(1)}% vs {(b.base_improve_rate*100).toFixed(1)}% base. gap &gt; 0 = opportunity running ahead of scoring (a buy lean).</div>);})()}
+        <div className="note">source: spine-generated signal.json{sigP._teamConflict?` (${sigP.team} season, current team ${sel.team})`:""}. backtest {yr}, out-of-sample: top-quartile gap flags improved later at {(b.flag_improve_rate*100).toFixed(1)}% vs {(b.base_improve_rate*100).toFixed(1)}% base. gap &gt; 0 = opportunity running ahead of scoring (a buy lean).</div>);})()}
       </div>
     )}
 
@@ -1066,9 +1110,10 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
           <div style={{display:"flex",gap:7,flexWrap:"wrap",alignItems:"center",marginTop:4}}>
             {sigP.snap!=null&&<span className="chip">snap share {(sigP.snap*100).toFixed(0)}%</span>}
             {sigP.ay!=null&&<span className="chip">air-yards share {(sigP.ay*100).toFixed(0)}%</span>}
+            {sigP._teamConflict&&<span className="chip">prior team {sigP.team}</span>}
             <span className="mono faint" style={{fontSize:10}}>· nflverse</span>
           </div>)}
-        <div className="note">source: spine signal.json from nflverse/hvpkod usage inputs. per-game usage vs the {sigP.pos} field ({sigP.season}); bar = standardized within position.{(sigP.snap!=null||sigP.ay!=null)?" snap share / air-yards share are from nflverse (shown for context; not yet folded into the backtested gap — see guide).":" snap share / air-yards arrive with the release-tier nflverse pull on deploy."}</div>
+        <div className="note">source: spine signal.json from nflverse/hvpkod usage inputs. per-game usage vs the {sigP.pos} field ({sigP.season}){sigP._teamConflict?`, when listed with ${sigP.team}`:""}; bar = standardized within position.{(sigP.snap!=null||sigP.ay!=null)?" snap share / air-yards share are from nflverse (shown for context; not yet folded into the backtested gap — see guide).":" snap share / air-yards arrive with the release-tier nflverse pull on deploy."}</div>
       </div>
     )}
 
@@ -1136,7 +1181,7 @@ function RevealedValues({league,fc,players,revealedSolve,revealedStatus,solveRev
         </div>)}
   </div>);
 }
-function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague,revealedSolve,revealedStatus,solveRevealedLeague}){
+function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague,revealedSolve,revealedStatus,solveRevealedLeague,sig}){
   const mineHere=myLeague&&league&&myLeague.leagueId===league.league_id;
   const [inspectRid,setInspectRid]=useState(null);
   const seasonOptions=[2026,2025,2024,2023,2022,2021,2020];
@@ -1206,10 +1251,13 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
         </div>
         {selected&&<div className="panel pad" style={{marginTop:12}}>
           <div className="head" style={{marginBottom:8}}><div className="lbl">{selected.name} · roster</div><div className="mono small mut">{roster.length} players</div></div>
-          {roster.map(p=>{const v=fcVal(fc,fcName,p);return(
+          {roster.map(p=>{const v=fcVal(fc,fcName,p), sg=sigFor(sig,p), market=v?v.value:null, trend=v?(v.trend30Day||0):null, age=ageFrom(p.birth_date);
+            const {edge}=intrinsicOf(market,trend,p.position,age,sg?sg.gap:null);
+            const sleeper=sleeperScoreOf({market,trend,pos:p.position,age,z_opp:sg&&sg.z_opp,gap:sg&&sg.gap,flag:sg&&sg.flag,snap:sg&&sg.snap,ay:sg&&sg.ay,edge});
+            return (
             <div key={p.player_id} onClick={()=>pick(p)} style={{display:"flex",alignItems:"center",gap:8,padding:"6px 0",borderBottom:"1px solid var(--line)",cursor:"pointer"}}>
               <PosChip pos={p.position}/><span style={{flex:1,fontSize:13}}>{p.full_name}</span>
-              <span className="mono small mut">{fmt(v&&v.value)}</span><span className="mono faint" style={{fontSize:10}}>↗</span>
+              <span className="mono small mut" title={v?"FantasyCalc market value":sleeper!=null?"sleeper score fallback; no FantasyCalc market value":"no market or signal rating"}>{v?fmt(v.value):sleeper!=null?`slp ${sleeper}`:"—"}</span><span className="mono faint" style={{fontSize:10}}>↗</span>
             </div>);})}
         </div>}
         <div className="note">{myLeague?"your league is saved — use trd to build trades, or click any manager here to inspect their roster.":"tap \"this is me\" on your team to save it, then the trade terminal can suggest targets from this league."}</div>
@@ -1239,10 +1287,11 @@ function sigFor(sig,p){if(!sig||!p)return null;
     const teamKnown=s.team&&s.team!=="FA";
     const teamMatch=currentTeam&&teamKnown&&s.team===currentTeam;
     const teamConflict=currentTeam&&teamKnown&&s.team!==currentTeam;
-    if(stale||rookie||teamConflict)return null;
-    return {...s,_joinScore:(teamMatch?3:0)+(s.season||0)/10000};
+    if(stale||rookie)return null;
+    return {...s,_teamConflict:teamConflict,_joinScore:(teamMatch?3:teamConflict?-1:0)+(s.season||0)/10000};
   }).filter(Boolean).sort((a,b)=>b._joinScore-a._joinScore);
-  return scored[0]||null;}
+  const preferred=scored.find(s=>!s._teamConflict);
+  return preferred||scored[0]||null;}
 function sigFlag(sig,p){const s=sigFor(sig,p);return s?s.flag:null;}
 
 // ---- revealed-preference value solver, CLIENT-SIDE over the synced league's real
