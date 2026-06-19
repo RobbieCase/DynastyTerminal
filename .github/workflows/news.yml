@@ -1,0 +1,34 @@
+name: news
+
+on:
+  schedule:
+    - cron: "0 */4 * * *"   # every 4 hours — news is time-sensitive
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: aggregate news
+        run: python spine/news.py     # stdlib only; reads data/signal.json for player tagging
+      - name: commit news to main
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/news.json
+          if ! git diff --cached --quiet; then
+            git commit -m "news: $(date -u +'%F %H:%MZ')"
+            git pull --rebase --autostash origin main || true
+            git push
+          else
+            echo "news.json unchanged"
+          fi

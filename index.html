@@ -610,12 +610,24 @@ let _newsPromise=null;
 function loadNews(){
   if(_newsPromise)return _newsPromise;
   _newsPromise=(async()=>{
-    const d=await jget("https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=50");
-    return (d.articles||[]).map(a=>({
-      headline:a.headline, desc:a.description||"", published:a.published,
-      href:(a.links&&a.links.web&&a.links.web.href)||null,
-      athletes:(a.categories||[]).filter(c=>c.type==="athlete").map(c=>norm(c.description||"")),
-      text:norm((a.headline||"")+" "+(a.description||""))}));
+    // live ESPN (fresh, client-side) + aggregated multi-source data/news.json (Action-side,
+    // committed — PFT/CBS/Yahoo/Yardbarker/ESPN, entity-tagged). Merge + dedup by title.
+    const espn=jget("https://site.api.espn.com/apis/site/v2/sports/football/nfl/news?limit=50")
+      .then(d=>(d.articles||[]).map(a=>({headline:a.headline, desc:a.description||"", published:a.published,
+        href:(a.links&&a.links.web&&a.links.web.href)||null, source:"ESPN",
+        athletes:(a.categories||[]).filter(c=>c.type==="athlete").map(c=>norm(c.description||"")),
+        text:norm((a.headline||"")+" "+(a.description||""))}))).catch(()=>[]);
+    const agg=fetch("./data/news.json").then(r=>r.ok?r.json():{articles:[]})
+      .then(d=>(d.articles||[]).map(a=>({headline:a.title, desc:a.summary||"", published:a.published,
+        href:a.link||null, source:a.source||"news",
+        athletes:(a.players||[]).map(p=>norm(p)),
+        text:norm((a.title||"")+" "+(a.summary||""))}))).catch(()=>[]);
+    const [e,g]=await Promise.all([espn,agg]);
+    const seen=new Set(),out=[];
+    for(const a of [...e,...g].sort((x,y)=>(y.published||"").localeCompare(x.published||""))){
+      const k=norm(a.headline); if(!k||seen.has(k))continue; seen.add(k); out.push(a);
+    }
+    return out;
   })().catch(()=>[]);
   return _newsPromise;
 }
@@ -625,7 +637,7 @@ function NewsItem({a}){
     <a href={a.href||undefined} target="_blank" rel="noopener noreferrer"
       style={{display:"block",textDecoration:"none",padding:"9px 0",borderBottom:"1px solid var(--line)"}}>
       <div style={{fontSize:13,color:"var(--tx)"}}>{a.headline}{a.href?<span className="mono faint" style={{fontSize:10}}> ↗</span>:""}</div>
-      <div className="mono faint" style={{fontSize:10,marginTop:2}}>{dt} · espn</div>
+      <div className="mono faint" style={{fontSize:10,marginTop:2}}>{dt} · {(a.source||"espn").toLowerCase()}</div>
       {a.desc&&<div className="small mut" style={{marginTop:3,lineHeight:1.5}}>{a.desc.slice(0,170)}{a.desc.length>170?"…":""}</div>}
     </a>);
 }
@@ -635,7 +647,7 @@ function GlobalNewsWire(){
   const items=(news&&news.length?news:[{headline:"loading ESPN headlines",href:null,published:null}]).slice(0,8);
   return (
     <div className="wire" style={{marginTop:8}}>
-      <span className="wdot" style={{background:"var(--warn)"}}></span><span className="lbl" style={{flex:"none"}}>global news · espn</span>
+      <span className="wdot" style={{background:"var(--warn)"}}></span><span className="lbl" style={{flex:"none"}}>global news · multi-source</span>
       <div style={{overflow:"hidden",flex:1}}>
         <div className="wtrack">
           {[...items,...items].map((a,i)=>(
@@ -841,15 +853,16 @@ function StatHistory({sel,currentSeason}){
 function PlayerNews({sel}){
   const [news,setNews]=useState(null);
   useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
-  if(news===null)return <div className="stub" style={{marginTop:12}}>loading ESPN news…</div>;
+  if(news===null)return <div className="stub" style={{marginTop:12}}>loading news…</div>;
   const nm=norm(sel.full_name);
   const mine=news.filter(a=>a.athletes.includes(nm)||(nm.length>4&&a.text.includes(nm)));
+  const srcs=[...new Set(mine.map(a=>a.source))];
   return (
   <div className="panel pad" style={{marginTop:12}}>
-    <div className="lbl" style={{marginBottom:8}}>player news · {sel.full_name} · espn matched</div>
-    {mine.length?mine.slice(0,6).map((a,i)=><NewsItem key={i} a={a}/>)
+    <div className="lbl" style={{marginBottom:8}}>player news · {sel.full_name} · matched{srcs.length?` · ${srcs.length} source${srcs.length>1?"s":""}`:""}</div>
+    {mine.length?mine.slice(0,8).map((a,i)=><NewsItem key={i} a={a}/>)
       :<div className="stub" style={{marginTop:0}}>no recent matched headlines.</div>}
-    <div className="note">live from ESPN's NFL feed, matched to this player by entity tag + name. unrelated league headlines stay in the separate global news wire above.</div>
+    <div className="note">matched to this player by entity tag + name across ESPN, PFT, CBS, Yahoo &amp; Yardbarker. unrelated league headlines stay in the separate global news wire above.</div>
   </div>);
 }
 function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){

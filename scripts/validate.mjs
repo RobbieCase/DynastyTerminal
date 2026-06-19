@@ -105,6 +105,18 @@ function checkIdentityCoverage() {
   assertCheck("identity_coverage priority gaps", Array.isArray(cov.priority_gaps), `${(cov.priority_gaps || []).length} gaps`);
 }
 
+function checkNews() {
+  let news;
+  try { news = readJson("data/news.json"); }
+  catch { assertCheck("news.json present", false, "missing — run spine/news.py"); return; }
+  const arts = Array.isArray(news.articles) ? news.articles : [];
+  const shaped = arts.filter(a => a && a.title && a.link && a.source && Array.isArray(a.players));
+  const sources = new Set(arts.map(a => a.source));
+  assertCheck("news.json articles", shaped.length >= 20, `${shaped.length} shaped articles`);
+  assertCheck("news.json multi-source", sources.size >= 3, `${[...sources].join(", ")}`);
+  assertCheck("news.json player tags", arts.some(a => a.players.length), `${arts.filter(a => a.players.length).length} tagged`);
+}
+
 async function fetchJson(name, url, predicate) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`${name} returned ${res.status}`);
@@ -135,6 +147,7 @@ async function main() {
   checkSignal();
   checkEspnIds();
   checkIdentityCoverage();
+  checkNews();
   if (withNetwork) await checkNetwork();
   else pass("network smoke checks", "skipped; run with --network");
 
