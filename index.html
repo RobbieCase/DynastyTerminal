@@ -228,7 +228,7 @@ function App(){
       const m={},mn={};
       d.forEach(o=>{if(o.player){if(o.player.sleeperId)m[o.player.sleeperId]=o; if(o.player.name)mn[norm(o.player.name)]=o;}});
       setFc(m);setFcName(mn);setFcStatus("");
-    }catch(e){setFc(null);setFcName(null);setFcStatus("values source unreachable from this context — they load once deployed, and chunk 2 replaces them with the backtested model");}
+    }catch(e){setFc(null);setFcName(null);setFcStatus("FantasyCalc market source unreachable from this context — it usually loads once deployed; DWR intrinsic/revealed reads depend on this market anchor when present");}
   })();},[set]);
 
   const sugg=useMemo(()=>{
@@ -344,6 +344,7 @@ function App(){
         </div>
       </div>
     </div>
+    <GlobalNewsWire/>
 
     {view==="league"
       ? <LeagueView {...{uname,setUname,season,setSeason,syncLeagues,leagues,loadLeague,league,teams,lStatus,fc,fcName,players,pick,setMyTeam,myLeague}}/>
@@ -362,8 +363,8 @@ function App(){
       : <PlayerView {...{sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,pick,watch,toggleWatch}}/>}
 
     <div className="note" style={{marginTop:18,borderTop:"1px solid var(--line)",paddingTop:12}}>
-      live now: Sleeper data + league sync, the trending wire, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
-      still ahead: survival-curve aging to replace v0 intrinsic, vegas prop-implied points (waiting on the season), and a news/FAAB wire.
+      live now: Sleeper data + league sync, trending adds, ESPN global/player news, FantasyCalc market values, backtested usage/opportunity signal, snap/air-yards, the screener, the value time-series, and the revealed-preference trade-solve (run on your synced league). <br/>
+      still ahead: survival-curve aging to replace v0 intrinsic, vegas prop-implied points (waiting on the season), and richer news/FAAB aggregation.
     </div>
   </div>);
 }
@@ -374,7 +375,7 @@ function ThinMarket({sel,age}){
     <div className="panel pad" style={{borderColor:"var(--line2)"}}>
       <div className="lbl" style={{marginBottom:6}}><span style={{color:"var(--warn)"}}>thin market</span> · no trade-derived value</div>
       <div className="small mut" style={{lineHeight:1.6}}>
-        FantasyCalc values come from real trades, so a player the market rarely trades sits below its coverage. That absence is a signal in itself — low liquidity, near-zero crowd consensus.
+        FantasyCalc market values come from real trades, so a player the market rarely trades sits below its coverage. That absence is a signal in itself — low liquidity, near-zero crowd consensus.
       </div>
       <div style={{display:"flex",gap:7,flexWrap:"wrap",marginTop:11}}>
         <span className="chip">sleeper rank {sel.search_rank??"—"}</span>
@@ -382,7 +383,7 @@ function ThinMarket({sel,age}){
         <span className="chip">{sel.position} · {sel.team}</span>
         {age&&<span className="chip">{age.toFixed(1)}y</span>}
       </div>
-      <div className="note">this is exactly the gap chunk 2 fills: usage-based intrinsic value and the trade-solve produce a number for fringe players without needing a liquid trade market.</div>
+      <div className="note">DWR's usage-based intrinsic read and the revealed-preference trade solve can still add context for fringe players without pretending FantasyCalc has a liquid market price.</div>
     </div>
   </div>);
 }
@@ -479,13 +480,13 @@ function DepthChart({team,season,players,fc,fcName,pick,sel,onBack}){
 function PriceHistory({sel,set}){
   const [snaps,setSnaps]=useState(null);
   useEffect(()=>{let dead=false;loadValueSeries().then(s=>{if(!dead)setSnaps(s);});return ()=>{dead=true;};},[]);
-  if(snaps===null)return <div className="panel pad" style={{marginTop:12}}><div className="lbl">value history</div><div className="note">loading daily snapshots…</div></div>;
+  if(snaps===null)return <div className="panel pad" style={{marginTop:12}}><div className="lbl">market history · FantasyCalc snapshots</div><div className="note">loading daily snapshots…</div></div>;
   const label=set.sf?"dyn_sf_ppr_12":"dyn_1qb_ppr_12";
   const pts=snaps.map(s=>{const o=s.sets&&s.sets[label]&&s.sets[label][sel.player_id];return o?{date:s.date,v:o.v}:null;}).filter(Boolean);
   return (
   <div className="panel pad" style={{marginTop:12}}>
     <div className="head" style={{marginBottom:8}}>
-      <div className="lbl">value history · {set.sf?"superflex":"1qb"} ppr · 12-tm</div>
+      <div className="lbl">market history · FantasyCalc snapshots · {set.sf?"superflex":"1qb"} ppr · 12-tm</div>
       <div className="mono faint" style={{fontSize:11}}>{snaps.length} day{snaps.length===1?"":"s"} tracked</div>
     </div>
     {pts.length<2 ? (
@@ -510,7 +511,7 @@ function PriceHistory({sel,set}){
         </div>
       </div>);
     })()}
-    <div className="note">self-accumulated daily FantasyCalc snapshots — the value time-series that can't be backfilled. grows one row per day the spine runs.</div>
+    <div className="note">self-accumulated daily FantasyCalc market snapshots from the orphan data branch. this is market history, not DWR intrinsic or revealed value history.</div>
   </div>);
 }
 // ESPN's public NFL news feed (CORS-friendly). Fetched once, cached; entity- + text-matched
@@ -537,6 +538,24 @@ function NewsItem({a}){
       <div className="mono faint" style={{fontSize:10,marginTop:2}}>{dt} · espn</div>
       {a.desc&&<div className="small mut" style={{marginTop:3,lineHeight:1.5}}>{a.desc.slice(0,170)}{a.desc.length>170?"…":""}</div>}
     </a>);
+}
+function GlobalNewsWire(){
+  const [news,setNews]=useState(null);
+  useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
+  const items=(news&&news.length?news:[{headline:"loading ESPN headlines",href:null,published:null}]).slice(0,8);
+  return (
+    <div className="wire" style={{marginTop:8}}>
+      <span className="wdot" style={{background:"var(--warn)"}}></span><span className="lbl" style={{flex:"none"}}>global news · espn</span>
+      <div style={{overflow:"hidden",flex:1}}>
+        <div className="wtrack">
+          {[...items,...items].map((a,i)=>(
+            <a key={i} href={a.href||undefined} target="_blank" rel="noopener noreferrer" className="witem" style={{textDecoration:"none"}}>
+              <b>{a.headline}</b>
+            </a>
+          ))}
+        </div>
+      </div>
+    </div>);
 }
 // ESPN athlete stats — year-by-year, keyed by espn_id (which Sleeper provides), client-side.
 const _statCache={};
@@ -644,7 +663,7 @@ function StatHistory({sel}){
         </div>
       </div>);})}
     {openYear&&<GameLog espnId={resolvedId} season={openYear}/>}
-    <div className="note">season-by-season from ESPN, keyed by ESPN id{sel.espn_id?"":" (resolved by nflverse name/position map)"}. in-season the current row updates as games are played.</div>
+    <div className="note">source: ESPN athlete stats, keyed by ESPN id{sel.espn_id?"":" (resolved by the local name/position ESPN id map)"}. in-season the current row updates as games are played.</div>
   </div>);
 }
 function PlayerNews({sel}){
@@ -655,11 +674,10 @@ function PlayerNews({sel}){
   const mine=news.filter(a=>a.athletes.includes(nm)||(nm.length>4&&a.text.includes(nm)));
   return (
   <div className="panel pad" style={{marginTop:12}}>
-    <div className="lbl" style={{marginBottom:8}}>news · {sel.full_name}</div>
+    <div className="lbl" style={{marginBottom:8}}>player news · {sel.full_name} · espn matched</div>
     {mine.length?mine.slice(0,6).map((a,i)=><NewsItem key={i} a={a}/>)
-      :<div><div className="note" style={{marginTop:0}}>no recent ESPN headlines mention {sel.full_name} — around the league:</div>
-        {news.slice(0,5).map((a,i)=><NewsItem key={i} a={a}/>)}</div>}
-    <div className="note">live from ESPN's NFL feed, matched to this player by entity tag + name. offseason coverage is thin; it fills in during the season.</div>
+      :<div className="stub" style={{marginTop:0}}>no recent matched headlines.</div>}
+    <div className="note">live from ESPN's NFL feed, matched to this player by entity tag + name. unrelated league headlines stay in the separate global news wire above.</div>
   </div>);
 }
 function WatchlistView({watch,players,fc,fcName,sig,set,pick,toggleWatch}){
@@ -769,9 +787,9 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
       market!=null ? (
       <div>
         <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)"}}>
-          <div className="metric"><div className="lbl">market value</div><div className="v">{fmt(market)}</div>
+          <div className="metric"><div className="lbl">market value · FantasyCalc</div><div className="v">{fmt(market)}</div>
             <div className="mono small" style={{color:trend>=0?"var(--buy)":"var(--sell)",marginTop:3}}>{trend>=0?"▲":"▼"} {fmt(Math.abs(trend))} · 30d</div></div>
-          <div className="metric"><div className="lbl">intrinsic · v0</div><div className="v" style={{color:"var(--wr)"}}>{fmt(intrinsic)}</div>
+          <div className="metric"><div className="lbl">DWR intrinsic · v0</div><div className="v" style={{color:"var(--wr)"}}>{fmt(intrinsic)}</div>
             <div className="mono small faint" style={{marginTop:3}}>age × mom × usage-gap</div></div>
           <div className="metric"><div className="lbl">edge</div>
             <div className="v" style={{color:buy?"var(--buy)":sell?"var(--sell)":"var(--tx)"}}>{edge>=0?"+":""}{edge.toFixed(1)}%</div>
@@ -793,24 +811,24 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
             </div>
             <span className="mono small" style={{color:"var(--wr)"}}>intr</span>
           </div>
-          <div className="note">v0 intrinsic = market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). still a placeholder; survival-curve aging + the revealed-preference trade-solve replace it.</div>
+          <div className="note">source split: market = FantasyCalc at the selected format; DWR intrinsic v0 = market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). still a placeholder; survival-curve aging + the revealed-preference trade-solve replace it.</div>
         </div>
       </div>
-      ) : (fc ? <ThinMarket sel={sel} age={age}/> : <div className="stub" style={{marginTop:12}}>{fcStatus||"values source unreachable"}</div>)
+      ) : (fc ? <ThinMarket sel={sel} age={age}/> : <div className="stub" style={{marginTop:12}}>{fcStatus||"FantasyCalc market source unreachable"}</div>)
     )}
 
     {fn==="mkt" && <PriceHistory sel={sel} set={set}/>}
 
     {fn==="val" && sigP && (
       <div className="panel pad" style={{marginTop:12,borderColor:sigP.flag==="buy"?"var(--buy)":"var(--line2)"}}>
-        <div className="lbl" style={{marginBottom:8}}>usage signal · {sigP.season} season · backtested</div>
+        <div className="lbl" style={{marginBottom:8}}>usage signal · signal.json · {sigP.season} season · backtested</div>
         <div className="row" style={{gridTemplateColumns:"repeat(3,1fr)",marginTop:0}}>
           <div className="metric"><div className="lbl">usage z · opp</div><div className="v" style={{color:"var(--wr)"}}>{sigP.z_opp>=0?"+":""}{sigP.z_opp}</div></div>
           <div className="metric"><div className="lbl">usage gap</div><div className="v" style={{color:sigP.gap>=0?"var(--buy)":"var(--sell)"}}>{sigP.gap>=0?"+":""}{sigP.gap}</div><div className="mono small faint" style={{marginTop:3}}>opp − scoring</div></div>
           <div className="metric"><div className="lbl">flag</div><div className="v" style={{color:sigP.flag==="buy"?"var(--buy)":"var(--mut)"}}>{sigP.flag||"—"}</div></div>
         </div>
         {sigMeta&&sigMeta.backtest&&(()=>{const yr=Object.keys(sigMeta.backtest).pop();const b=sigMeta.backtest[yr];return (
-          <div className="note">backtest {yr}, out-of-sample: top-quartile gap flags improved later at {(b.flag_improve_rate*100).toFixed(1)}% vs {(b.base_improve_rate*100).toFixed(1)}% base. gap &gt; 0 = opportunity running ahead of scoring (a buy lean).</div>);})()}
+          <div className="note">source: spine-generated signal.json. backtest {yr}, out-of-sample: top-quartile gap flags improved later at {(b.flag_improve_rate*100).toFixed(1)}% vs {(b.base_improve_rate*100).toFixed(1)}% base. gap &gt; 0 = opportunity running ahead of scoring (a buy lean).</div>);})()}
       </div>
     )}
 
@@ -850,12 +868,12 @@ function PlayerView({sel,fn,fc,fcName,fcStatus,set,setSet,openDepth,sig,players,
             {sigP.ay!=null&&<span className="chip">air-yards share {(sigP.ay*100).toFixed(0)}%</span>}
             <span className="mono faint" style={{fontSize:10}}>· nflverse</span>
           </div>)}
-        <div className="note">per-game usage vs the {sigP.pos} field ({sigP.season}); bar = standardized within position.{(sigP.snap!=null||sigP.ay!=null)?" snap share / air-yards share are from nflverse (shown for context; not yet folded into the backtested gap — see guide).":" snap share / air-yards arrive with the release-tier nflverse pull on deploy."}</div>
+        <div className="note">source: spine signal.json from nflverse/hvpkod usage inputs. per-game usage vs the {sigP.pos} field ({sigP.season}); bar = standardized within position.{(sigP.snap!=null||sigP.ay!=null)?" snap share / air-yards share are from nflverse (shown for context; not yet folded into the backtested gap — see guide).":" snap share / air-yards arrive with the release-tier nflverse pull on deploy."}</div>
       </div>
     )}
 
     {fn==="use" && !sigP && <div className="stub" style={{marginTop:12}}>
-      <b>usage · opportunity</b> — chunk 2 (python spine)<br/>
+      <b>usage · opportunity</b> — spine signal feed<br/>
       {sig
         ? <span style={{color:"var(--warn)"}}>no usage signal for {sel.full_name} — {sel.years_exp===0?"rookie, no NFL season logged yet":"no recent season with 5+ games (injured / inactive / deep on the chart)"}.<br/></span>
         : <span style={{color:"var(--faint)"}}>signal feed not loaded (check data/signal.json).<br/></span>}
@@ -944,7 +962,7 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
         <button className="btn" onClick={syncLeagues}>sync</button>
       </div>
       {lStatus && <div className="note">{lStatus}</div>}
-      {!fc && <div className="note">note: roster strength needs the values source (currently unreachable here) — team list + records still load from Sleeper.</div>}
+      {!fc && <div className="note">note: roster strength needs the FantasyCalc market source (currently unreachable here) — team list + records still load from Sleeper.</div>}
       {myLeague&&!league&&!leagues&&<div className="note">loaded from saved league: <span className="mono" style={{color:"var(--wr)"}}>{myLeague.leagueName}</span>. sync above to switch leagues or seasons.</div>}
     </div>
 
@@ -962,7 +980,7 @@ function LeagueView({uname,setUname,season,setSeason,syncLeagues,leagues,loadLea
     {viewTeams &&
       <div style={{marginTop:12}}>
         <div className="head" style={{marginBottom:8}}>
-          <div className="mono mut small">{viewLeagueName} · {fc?"power ranking by roster value":"by record"} · click a team for roster</div>
+          <div className="mono mut small">{viewLeagueName} · {fc?"power ranking by FantasyCalc market value":"by record"} · click a team for roster</div>
           {league&&<button className="btn" onClick={()=>{loadLeague(null);setInspectRid(null);}}>change league</button>}
         </div>
         <div className="row" style={{gridTemplateColumns:"1fr"}}>
@@ -1266,7 +1284,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
             style={tgtPos===P&&P!=="ALL"?{color:POS[P],borderColor:POS[P]}:{}}>
             {P.toLowerCase()}{isWeak&&<span style={{color:"var(--warn)"}}> •</span>}</span>);})}
       </div>
-      {targets.length===0&&<div className="mono faint" style={{fontSize:11}}>{fc?"no candidates at this position":"no targets — load FantasyCalc values (deploy)"}</div>}
+      {targets.length===0&&<div className="mono faint" style={{fontSize:11}}>{fc?"no candidates at this position":"no targets — load FantasyCalc market values (deploy)"}</div>}
       {targets.map(({p,owner,ownerRid,score,sg})=>{const added=has(get,p);const a=ageFrom(p.birth_date);return(
         <div key={p.player_id} onClick={()=>addTo(setGet,p)} className="opt" style={{borderRadius:7,opacity:added?.5:1,alignItems:"flex-start"}}>
           <PosChip pos={p.position}/>
@@ -1311,7 +1329,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
               <PosChip pos={p.position}/><span style={{flex:1}}>{p.full_name}</span><span className="mono small mut">{fmt(valOf(p))}</span></div>))}</div>}
         </div>
       </div>
-      {!fc&&<div className="note">values need FantasyCalc (loads on deploy).</div>}
+      {!fc&&<div className="note">market values need FantasyCalc (loads on deploy).</div>}
     </div>
 
     <div className="row" style={{gridTemplateColumns:"1fr 1fr"}}>
@@ -1337,7 +1355,7 @@ function TradeTerminal({players,fc,fcName,sig,set,pick,myLeague}){
         <span className="mono small mut" style={{width:64}}>{lblGet} {fmt(avG)}</span>
         <div className="bar" style={{flex:1}}><div style={{width:(avG/(avG+avGv)*100)+"%",background:"var(--wr)"}}></div></div>
         <span className="mono small mut" style={{width:64,textAlign:"right"}}>{fmt(avGv)} {lblGive}</span></div>}
-      <div className="note">basis: <b style={{color:"var(--mut)"}}>{valMode==="revealed"?"your league's revealed-preference values (solved from real trades), market where a player hasn't traded":"FantasyCalc market values at your format"}</b>{windowMode!=="balanced"?`, tilted for a ${windowMode} window (`+(windowMode==="rebuild"?"youth & picks up":"proven & win-now up")+")":""}. Roster-spot tax (4%/extra rosterable body, capped) still applies. Per-piece chips above show market price.</div>
+      <div className="note">basis: <b style={{color:"var(--mut)"}}>{valMode==="revealed"?"your league's revealed-preference values (solved from real trades), FantasyCalc market where a player hasn't traded":"FantasyCalc market values at your format"}</b>{windowMode!=="balanced"?`, tilted for a ${windowMode} window (`+(windowMode==="rebuild"?"youth & picks up":"proven & win-now up")+")":""}. Roster-spot tax (4%/extra rosterable body, capped) still applies. Per-piece chips above show market price.</div>
     </div>
   </div>);
 }
@@ -1501,14 +1519,14 @@ function Screener({players,fc,fcName,sig,set,pick}){
     </div>
     {filtered.length>CAP&&<div className="note">showing top {CAP} of {filtered.length} — narrow with the position / name filters.</div>}
     <div className="note">
-      click any row to open the player. value &amp; edge come from FantasyCalc{!fc&&" (load on deploy)"}; usage z &amp; gap come from the spine's season feed (signal.json), which is stable through the offseason.
+      click any row to open the player. market value comes from FantasyCalc{!fc&&" (load on deploy)"}; intrinsic/edge are DWR v0 reads from market + age/momentum + usage gap. usage z &amp; gap come from the spine's season feed (signal.json), which is stable through the offseason.
     </div>
   </div>);
 }
 
 const GLOSSARY=[
-  ["market value","FantasyCalc's trade value — derived from real trades across thousands of leagues, at your league format. The crowd's price."],
-  ["intrinsic · v0","Market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). The gap term is the one component with out-of-sample edge. Still a placeholder for survival-curve aging + the trade-solve."],
+  ["market value","FantasyCalc's trade value — derived from real trades across thousands of leagues, at your league format. The crowd's price, not DWR's proprietary value."],
+  ["intrinsic · v0","DWR's current intrinsic read: market × position age-curve × clamped 30-day momentum × a bounded tilt from the backtested usage gap (±10%). Still a placeholder for survival-curve aging + the trade-solve."],
   ["edge","(intrinsic − market) / market. Positive = read as underpriced vs the market. Now driven partly by the backtested usage gap, so it reflects signal — not just the age tier."],
   ["usage z · opp","How a player's opportunity ranks vs their position that season, in standard deviations. +2σ ≈ elite usage, 0 ≈ average."],
   ["usage gap","opportunity z minus scoring z. Positive = getting the opportunity but not yet scoring it — a positive-regression / buy lean."],
