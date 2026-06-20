@@ -24,7 +24,7 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add data/news.json
+          git add data/news.json data/news
           if ! git diff --cached --quiet; then
             git commit -m "news: $(date -u +'%F %H:%MZ')"
             git pull --rebase --autostash origin main || true

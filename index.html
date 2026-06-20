@@ -630,7 +630,8 @@ function loadNews(){
       .then(d=>(d.articles||[]).map(a=>({headline:a.title, desc:a.summary||"", published:a.published,
         href:a.link||null, source:a.source||"news",
         athletes:(a.players||[]).map(p=>norm(p)),
-        text:norm((a.title||"")+" "+(a.summary||""))}))).catch(()=>[]);
+        text:norm((a.title||"")+" "+(a.summary||"")),
+        matchType:a.match_type||"",confidence:a.confidence||""}))).catch(()=>[]);
     const [e,g]=await Promise.all([espn,agg]);
     const seen=new Set(),out=[];
     for(const a of [...e,...g].sort((x,y)=>(y.published||"").localeCompare(x.published||""))){
@@ -681,11 +682,12 @@ function GlobalNewsWire(){
   const [news,setNews]=useState(null);
   useEffect(()=>{let dead=false;loadNews().then(n=>{if(!dead)setNews(n);});return ()=>{dead=true;};},[]);
   const items=useMemo(()=>{
-    if(!(news&&news.length))return [{headline:"loading news headlines",href:null,published:null,source:"news"}];
+    const wireNews=(news||[]).filter(a=>!String(a.matchType||"").includes("search")&&!String(a.source||"").toLowerCase().includes("search"));
+    if(!wireNews.length)return [{headline:"loading news headlines",href:null,published:null,source:"news"}];
     const bySource={},picked=[],seen=new Set();
-    news.forEach(a=>{const s=a.source||"news"; if(!bySource[s])bySource[s]=a;});
+    wireNews.forEach(a=>{const s=a.source||"news"; if(!bySource[s])bySource[s]=a;});
     Object.values(bySource).forEach(a=>{picked.push(a);seen.add(norm(a.headline));});
-    news.forEach(a=>{const k=norm(a.headline);if(picked.length<8&&!seen.has(k)){picked.push(a);seen.add(k);}});
+    wireNews.forEach(a=>{const k=norm(a.headline);if(picked.length<8&&!seen.has(k)){picked.push(a);seen.add(k);}});
     return picked.slice(0,8);
   },[news]);
   return (

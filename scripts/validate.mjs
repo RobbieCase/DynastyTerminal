@@ -109,12 +109,21 @@ function checkNews() {
   let news;
   try { news = readJson("data/news.json"); }
   catch { assertCheck("news.json present", false, "missing — run spine/news.py"); return; }
+  let latest, index;
+  try { latest = readJson("data/news/latest.json"); }
+  catch { latest = null; }
+  try { index = readJson("data/news/index.json"); }
+  catch { index = null; }
   const arts = Array.isArray(news.articles) ? news.articles : [];
   const shaped = arts.filter(a => a && a.title && a.link && a.source && Array.isArray(a.players));
   const sources = new Set(arts.map(a => a.source));
-  assertCheck("news.json articles", shaped.length >= 20, `${shaped.length} shaped articles`);
+  assertCheck("news.json articles", shaped.length >= 1000, `${shaped.length} shaped articles`);
   assertCheck("news.json multi-source", sources.size >= 3, `${[...sources].join(", ")}`);
-  assertCheck("news.json player tags", arts.some(a => a.players.length), `${arts.filter(a => a.players.length).length} tagged`);
+  assertCheck("news.json search source", sources.has("ESPN search"), `${[...sources].join(", ")}`);
+  assertCheck("news.json player tags", arts.filter(a => a.players.length).length >= 500, `${arts.filter(a => a.players.length).length} tagged`);
+  assertCheck("news.json retention", (news.retention_days || 0) >= 365, `${news.retention_days || 0} days`);
+  assertCheck("news latest artifact", !!(latest && Array.isArray(latest.articles) && latest.articles.length === arts.length), latest ? `${latest.articles.length} latest articles` : "missing");
+  assertCheck("news index artifact", !!(index && Array.isArray(index.articles) && index.articles.length === arts.length), index ? `${index.articles.length} indexed articles` : "missing");
 }
 
 async function fetchJson(name, url, predicate) {
