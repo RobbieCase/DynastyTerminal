@@ -25,7 +25,7 @@
     },
     "trade_solve_selftest": {
       "spearman": 0.9980832002222375,
-      "median_abs_pct_err": 4.5463761450163025,
+      "median_abs_pct_err": 4.54637614501628,
       "n_solved": 120
     },
     "age_curves": {
@@ -712,7 +712,7 @@
       "z_opp": -0.53,
       "gap": 0.08,
       "flag": null,
-      "snap": 0.071,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -871,7 +871,7 @@
       "z_opp": -0.0,
       "gap": -0.13,
       "flag": null,
-      "snap": 0.141,
+      "snap": null,
       "ay": 0.015,
       "m": {
         "tgt": 0.4,
@@ -1401,7 +1401,7 @@
       "z_opp": -0.62,
       "gap": -0.16,
       "flag": null,
-      "snap": 0.004,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -1613,7 +1613,7 @@
       "z_opp": -0.58,
       "gap": 0.1,
       "flag": "buy",
-      "snap": 0.016,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -1666,7 +1666,7 @@
       "z_opp": -0.09,
       "gap": 0.27,
       "flag": "buy",
-      "snap": 0.199,
+      "snap": null,
       "ay": 0.04,
       "m": {
         "tgt": 0.9,
@@ -3309,7 +3309,7 @@
       "z_opp": -0.18,
       "gap": 0.34,
       "flag": "buy",
-      "snap": 0.155,
+      "snap": null,
       "ay": 0.022,
       "m": {
         "tgt": 0.6,
@@ -4104,7 +4104,7 @@
       "z_opp": -0.58,
       "gap": 0.08,
       "flag": null,
-      "snap": 0.006,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -4263,7 +4263,7 @@
       "z_opp": -0.36,
       "gap": 0.02,
       "flag": null,
-      "snap": 0.096,
+      "snap": null,
       "ay": 0.074,
       "m": {
         "tgt": 0.8,
@@ -5270,7 +5270,7 @@
       "z_opp": 0.48,
       "gap": 0.04,
       "flag": null,
-      "snap": 0.304,
+      "snap": null,
       "ay": 0.005,
       "m": {
         "tgt": 1.3,
@@ -6118,7 +6118,7 @@
       "z_opp": -0.61,
       "gap": 0.05,
       "flag": null,
-      "snap": 0.005,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -6648,7 +6648,7 @@
       "z_opp": 0.28,
       "gap": -0.12,
       "flag": null,
-      "snap": 0.229,
+      "snap": null,
       "ay": 0.004,
       "m": {
         "tgt": 1.9,
@@ -7284,7 +7284,7 @@
       "z_opp": -0.48,
       "gap": -0.09,
       "flag": null,
-      "snap": 0.161,
+      "snap": null,
       "ay": 0.003,
       "m": {
         "tgt": 0.2,
@@ -7337,7 +7337,7 @@
       "z_opp": -0.52,
       "gap": 0.04,
       "flag": null,
-      "snap": 0.023,
+      "snap": null,
       "ay": 0.0,
       "m": {
         "tgt": 0.1,
@@ -8026,7 +8026,7 @@
       "z_opp": -0.45,
       "gap": -0.07,
       "flag": null,
-      "snap": 0.041,
+      "snap": null,
       "ay": 0.016,
       "m": {
         "tgt": 0.7,
@@ -8397,7 +8397,7 @@
       "z_opp": -0.45,
       "gap": -0.07,
       "flag": null,
-      "snap": 0.043,
+      "snap": null,
       "ay": 0.008,
       "m": {
         "tgt": 0.2,
@@ -8556,7 +8556,7 @@
       "z_opp": -0.46,
       "gap": -0.05,
       "flag": null,
-      "snap": 0.186,
+      "snap": null,
       "ay": 0.003,
       "m": {
         "tgt": 0.4,
@@ -8768,7 +8768,7 @@
       "z_opp": -0.6,
       "gap": 0.02,
       "flag": null,
-      "snap": 0.038,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -10517,7 +10517,7 @@
       "z_opp": -0.61,
       "gap": 0.05,
       "flag": null,
-      "snap": 0.013,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.1,
@@ -10570,7 +10570,7 @@
       "z_opp": -0.59,
       "gap": 0.03,
       "flag": null,
-      "snap": 0.014,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.2,
@@ -12849,7 +12849,7 @@
       "z_opp": -0.07,
       "gap": -0.05,
       "flag": null,
-      "snap": 0.242,
+      "snap": null,
       "ay": 0.06,
       "m": {
         "tgt": 1.4,
@@ -14439,7 +14439,7 @@
       "z_opp": -0.58,
       "gap": 0.05,
       "flag": null,
-      "snap": 0.011,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -16771,7 +16771,7 @@
       "z_opp": -0.61,
       "gap": 0.0,
       "flag": null,
-      "snap": 0.036,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.1,
@@ -20481,7 +20481,7 @@
       "z_opp": -0.33,
       "gap": 0.06,
       "flag": "buy",
-      "snap": 0.079,
+      "snap": null,
       "ay": 0.028,
       "m": {
         "tgt": 0.7,
@@ -23343,7 +23343,7 @@
       "z_opp": -0.61,
       "gap": 0.0,
       "flag": null,
-      "snap": 0.022,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -26470,7 +26470,7 @@
       "z_opp": -0.42,
       "gap": -0.03,
       "flag": null,
-      "snap": 0.054,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.1,
@@ -28113,7 +28113,7 @@
       "z_opp": 0.18,
       "gap": 0.27,
       "flag": "buy",
-      "snap": 0.117,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.8,
@@ -30869,7 +30869,7 @@
       "z_opp": -0.53,
       "gap": 0.03,
       "flag": null,
-      "snap": 0.387,
+      "snap": null,
       "ay": 0.003,
       "m": {
         "tgt": 0.2,
@@ -31081,7 +31081,7 @@
       "z_opp": -0.62,
       "gap": 0.04,
       "flag": null,
-      "snap": 0.001,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -38342,7 +38342,7 @@
       "z_opp": -0.43,
       "gap": 0.08,
       "flag": "buy",
-      "snap": 0.065,
+      "snap": null,
       "ay": 0.002,
       "m": {
         "tgt": 0.2,
@@ -38713,7 +38713,7 @@
       "z_opp": -0.31,
       "gap": -0.0,
       "flag": null,
-      "snap": 0.276,
+      "snap": null,
       "ay": 0.019,
       "m": {
         "tgt": 0.9,
@@ -38978,7 +38978,7 @@
       "z_opp": -0.59,
       "gap": -0.0,
       "flag": null,
-      "snap": 0.002,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -43271,7 +43271,7 @@
       "z_opp": -0.59,
       "gap": -0.0,
       "flag": null,
-      "snap": 0.176,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -44702,7 +44702,7 @@
       "z_opp": -0.6,
       "gap": 0.02,
       "flag": null,
-      "snap": 0.006,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -46928,7 +46928,7 @@
       "z_opp": -0.51,
       "gap": 0.07,
       "flag": "buy",
-      "snap": 0.02,
+      "snap": null,
       "ay": 0.004,
       "m": {
         "tgt": 0.1,
@@ -59701,7 +59701,7 @@
       "z_opp": -0.6,
       "gap": 0.02,
       "flag": null,
-      "snap": 0.008,
+      "snap": null,
       "ay": null,
       "m": {
         "tgt": 0.0,
