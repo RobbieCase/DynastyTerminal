@@ -11,7 +11,7 @@
       "2024": {
         "n": 1022,
         "r2_base": 0.65,
-        "r2_full": 0.65,
+        "r2_full": 0.651,
         "flag_improve_rate": 0.317,
         "base_improve_rate": 0.267
       },
@@ -392,7 +392,7 @@
       "team": "HOU",
       "season": 2021,
       "z_opp": -0.05,
-      "gap": 0.16,
+      "gap": 0.15,
       "flag": "buy",
       "snap": 0.151,
       "ay": 0.046,
@@ -410,7 +410,7 @@
         "tgt": 0.05,
         "tch": -0.04,
         "rz": -0.26,
-        "shr": 0.07,
+        "shr": 0.06,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -550,7 +550,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -573,7 +573,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -1311,7 +1311,7 @@
         "tgt": -0.55,
         "tch": -0.52,
         "rz": -0.6,
-        "shr": -0.55,
+        "shr": -0.56,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -1329,13 +1329,13 @@
           "pos": "TE"
         },
         {
-          "name": "Derek Carrier",
-          "team": "LV",
+          "name": "Moliki Matavao",
+          "team": "NO",
           "pos": "TE"
         },
         {
-          "name": "Moliki Matavao",
-          "team": "NO",
+          "name": "Derek Carrier",
+          "team": "LV",
           "pos": "TE"
         }
       ]
@@ -1451,7 +1451,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -1474,7 +1474,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -1523,7 +1523,7 @@
         "tgt": -0.23,
         "tch": -0.16,
         "rz": -0.18,
-        "shr": -0.29,
+        "shr": -0.28,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -1546,8 +1546,8 @@
           "pos": "TE"
         },
         {
-          "name": "Jack Stoll",
-          "team": "NO",
+          "name": "Hunter Long",
+          "team": "JAX",
           "pos": "TE"
         }
       ]
@@ -1955,13 +1955,13 @@
       },
       "comps": [
         {
-          "name": "Taiwan Jones",
-          "team": "BUF",
+          "name": "Robbie Ouzts",
+          "team": "SEA",
           "pos": "RB"
         },
         {
-          "name": "Robbie Ouzts",
-          "team": "SEA",
+          "name": "Cullen Gillaspia",
+          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -1981,7 +1981,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -2004,7 +2004,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -2829,30 +2829,30 @@
       "pos": "RB",
       "team": "SEA",
       "season": 2021,
-      "z_opp": -0.2,
+      "z_opp": -0.17,
       "gap": 0.16,
       "flag": "buy",
-      "snap": 0.065,
+      "snap": 0.069,
       "ay": null,
       "m": {
         "tgt": 0.2,
-        "tch": 2.5,
+        "tch": 2.6,
         "rz": 0.1,
         "shr": 0.0,
-        "car": 2.2,
-        "rush": 5.8,
+        "car": 2.4,
+        "rush": 6.1,
         "pas": 0.0,
-        "pts": 1.4
+        "pts": 1.5
       },
       "z": {
-        "tgt": -0.52,
-        "tch": -0.2,
-        "rz": -0.27,
-        "shr": -0.48,
-        "car": -0.14,
-        "rush": -0.34,
+        "tgt": -0.5,
+        "tch": -0.17,
+        "rz": -0.25,
+        "shr": -0.47,
+        "car": -0.1,
+        "rush": -0.32,
         "pas": -0.09,
-        "pts": -0.36
+        "pts": -0.33
       },
       "comps": [
         {
@@ -2866,13 +2866,13 @@
           "pos": "RB"
         },
         {
-          "name": "Tevin Coleman",
-          "team": "SF",
+          "name": "Jaret Patterson",
+          "team": "LAC",
           "pos": "RB"
         },
         {
-          "name": "Jaret Patterson",
-          "team": "LAC",
+          "name": "Tevin Coleman",
+          "team": "SF",
           "pos": "RB"
         }
       ]
@@ -2936,7 +2936,7 @@
       "team": "FA",
       "season": 2021,
       "z_opp": 0.84,
-      "gap": -0.14,
+      "gap": -0.15,
       "flag": null,
       "snap": 0.224,
       "ay": 0.121,
@@ -2954,7 +2954,7 @@
         "tgt": 0.88,
         "tch": 0.9,
         "rz": -0.09,
-        "shr": 1.73,
+        "shr": 1.72,
         "car": -0.01,
         "rush": -0.02,
         "pas": -0.13,
@@ -2989,7 +2989,7 @@
       "team": "FA",
       "season": 2021,
       "z_opp": -0.25,
-      "gap": 0.19,
+      "gap": 0.18,
       "flag": "buy",
       "snap": 0.071,
       "ay": 0.014,
@@ -3007,7 +3007,7 @@
         "tgt": -0.49,
         "tch": -0.51,
         "rz": -0.26,
-        "shr": 0.01,
+        "shr": -0.0,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -3338,13 +3338,13 @@
           "pos": "WR"
         },
         {
-          "name": "Gabe Davis",
-          "team": "BUF",
+          "name": "Christian Blake",
+          "team": "ATL",
           "pos": "WR"
         },
         {
-          "name": "Christian Blake",
-          "team": "ATL",
+          "name": "Gabe Davis",
+          "team": "BUF",
           "pos": "WR"
         },
         {
@@ -3518,7 +3518,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -3541,7 +3541,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -3677,7 +3677,7 @@
       "pos": "WR",
       "team": "SF",
       "season": 2021,
-      "z_opp": -0.03,
+      "z_opp": -0.02,
       "gap": 0.19,
       "flag": "buy",
       "snap": 0.222,
@@ -3730,7 +3730,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -3753,7 +3753,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -3783,8 +3783,8 @@
       "pos": "TE",
       "team": "LV",
       "season": 2021,
-      "z_opp": -0.57,
-      "gap": -0.09,
+      "z_opp": -0.56,
+      "gap": -0.08,
       "flag": null,
       "snap": 0.026,
       "ay": 0.001,
@@ -3802,7 +3802,7 @@
         "tgt": -0.55,
         "tch": -0.52,
         "rz": -0.6,
-        "shr": -0.55,
+        "shr": -0.53,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -4207,7 +4207,7 @@
       "pos": "WR",
       "team": "JAX",
       "season": 2021,
-      "z_opp": 0.16,
+      "z_opp": 0.15,
       "gap": 0.11,
       "flag": "buy",
       "snap": 0.275,
@@ -4226,7 +4226,7 @@
         "tgt": 0.27,
         "tch": 0.32,
         "rz": -0.09,
-        "shr": 0.28,
+        "shr": 0.27,
         "car": 0.58,
         "rush": 0.64,
         "pas": -0.13,
@@ -4313,7 +4313,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -4336,7 +4336,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -4366,7 +4366,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -4389,7 +4389,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -4843,30 +4843,30 @@
       "pos": "RB",
       "team": "TB",
       "season": 2021,
-      "z_opp": -0.32,
-      "gap": -0.02,
+      "z_opp": -0.3,
+      "gap": -0.03,
       "flag": null,
-      "snap": 0.114,
+      "snap": 0.121,
       "ay": 0.001,
       "m": {
         "tgt": 0.4,
-        "tch": 2.4,
+        "tch": 2.5,
         "rz": 0.0,
         "shr": 0.0,
-        "car": 2.1,
-        "rush": 5.1,
+        "car": 2.2,
+        "rush": 5.4,
         "pas": 0.0,
-        "pts": 1.6
+        "pts": 1.7
       },
       "z": {
-        "tgt": -0.41,
-        "tch": -0.22,
+        "tgt": -0.4,
+        "tch": -0.19,
         "rz": -0.57,
-        "shr": -0.02,
-        "car": -0.16,
-        "rush": -0.37,
+        "shr": 0.02,
+        "car": -0.13,
+        "rush": -0.36,
         "pas": -0.09,
-        "pts": -0.3
+        "pts": -0.27
       },
       "comps": [
         {
@@ -4885,8 +4885,8 @@
           "pos": "RB"
         },
         {
-          "name": "Jaleel McLaughlin",
-          "team": "DEN",
+          "name": "Audric Estim\u00e9",
+          "team": "NO",
           "pos": "RB"
         }
       ]
@@ -4896,8 +4896,8 @@
       "pos": "WR",
       "team": "NO",
       "season": 2021,
-      "z_opp": -0.14,
-      "gap": 0.26,
+      "z_opp": -0.15,
+      "gap": 0.25,
       "flag": "buy",
       "snap": 0.252,
       "ay": 0.091,
@@ -4915,7 +4915,7 @@
         "tgt": -0.11,
         "tch": -0.41,
         "rz": -0.26,
-        "shr": -0.06,
+        "shr": -0.07,
         "car": -0.01,
         "rush": -0.24,
         "pas": -0.13,
@@ -5108,7 +5108,7 @@
       "pos": "TE",
       "team": "IND",
       "season": 2021,
-      "z_opp": 0.96,
+      "z_opp": 0.97,
       "gap": 0.06,
       "flag": "buy",
       "snap": 0.549,
@@ -5127,7 +5127,7 @@
         "tgt": 0.83,
         "tch": 0.8,
         "rz": 1.08,
-        "shr": 0.97,
+        "shr": 0.99,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -5233,7 +5233,7 @@
         "tgt": -0.44,
         "tch": -0.42,
         "rz": -0.6,
-        "shr": -0.51,
+        "shr": -0.52,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -6592,7 +6592,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -6615,7 +6615,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -6698,30 +6698,30 @@
       "pos": "RB",
       "team": "JAX",
       "season": 2021,
-      "z_opp": 0.13,
-      "gap": 0.24,
+      "z_opp": 0.16,
+      "gap": 0.25,
       "flag": "buy",
-      "snap": 0.264,
-      "ay": 0.007,
+      "snap": 0.265,
+      "ay": 0.006,
       "m": {
-        "tgt": 1.3,
-        "tch": 4.9,
+        "tgt": 1.2,
+        "tch": 5.1,
         "rz": 0.1,
         "shr": 0.0,
-        "car": 4.2,
-        "rush": 14.9,
+        "car": 4.4,
+        "rush": 15.4,
         "pas": 0.0,
-        "pts": 2.3
+        "pts": 2.4
       },
       "z": {
-        "tgt": 0.39,
-        "tch": 0.31,
-        "rz": -0.27,
-        "shr": 0.2,
-        "car": 0.35,
-        "rush": 0.17,
+        "tgt": 0.35,
+        "tch": 0.35,
+        "rz": -0.25,
+        "shr": 0.16,
+        "car": 0.39,
+        "rush": 0.2,
         "pas": -0.09,
-        "pts": -0.11
+        "pts": -0.09
       },
       "comps": [
         {
@@ -6730,13 +6730,13 @@
           "pos": "RB"
         },
         {
-          "name": "Devin Neal",
-          "team": "NO",
+          "name": "Ezekiel Elliott",
+          "team": "DAL",
           "pos": "RB"
         },
         {
-          "name": "Ezekiel Elliott",
-          "team": "DAL",
+          "name": "Devin Neal",
+          "team": "NO",
           "pos": "RB"
         },
         {
@@ -7088,7 +7088,7 @@
         "tgt": 0.3,
         "tch": 0.39,
         "rz": -0.26,
-        "shr": 0.23,
+        "shr": 0.24,
         "car": 0.87,
         "rush": 0.46,
         "pas": -0.13,
@@ -7318,13 +7318,13 @@
           "pos": "RB"
         },
         {
-          "name": "Kalen Ballage",
-          "team": "PIT",
+          "name": "Mike Davis",
+          "team": "FA",
           "pos": "RB"
         },
         {
-          "name": "Mike Davis",
-          "team": "FA",
+          "name": "Kalen Ballage",
+          "team": "PIT",
           "pos": "RB"
         }
       ]
@@ -7387,7 +7387,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -7410,7 +7410,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -7689,13 +7689,13 @@
           "pos": "RB"
         },
         {
-          "name": "Jalen Richard",
-          "team": "LV",
+          "name": "Kalen Ballage",
+          "team": "PIT",
           "pos": "RB"
         },
         {
-          "name": "Kalen Ballage",
-          "team": "PIT",
+          "name": "Jalen Richard",
+          "team": "LV",
           "pos": "RB"
         }
       ]
@@ -8447,7 +8447,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -8470,7 +8470,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -9985,7 +9985,7 @@
       "team": "WAS",
       "season": 2021,
       "z_opp": 0.71,
-      "gap": 0.37,
+      "gap": 0.38,
       "flag": "buy",
       "snap": 0.55,
       "ay": 0.094,
@@ -10003,7 +10003,7 @@
         "tgt": 0.83,
         "tch": 0.79,
         "rz": 0.43,
-        "shr": 0.86,
+        "shr": 0.87,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -10109,7 +10109,7 @@
         "tgt": -0.61,
         "tch": -0.59,
         "rz": -0.43,
-        "shr": -0.41,
+        "shr": -0.42,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -10302,7 +10302,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -10325,7 +10325,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -10392,8 +10392,8 @@
           "pos": "RB"
         },
         {
-          "name": "Jalen Richard",
-          "team": "LV",
+          "name": "Kalen Ballage",
+          "team": "PIT",
           "pos": "RB"
         },
         {
@@ -10408,30 +10408,30 @@
       "pos": "RB",
       "team": "NYG",
       "season": 2021,
-      "z_opp": 0.91,
-      "gap": -0.28,
+      "z_opp": 0.99,
+      "gap": -0.29,
       "flag": null,
-      "snap": 0.439,
+      "snap": 0.458,
       "ay": null,
       "m": {
-        "tgt": 2.5,
-        "tch": 10.3,
+        "tgt": 2.6,
+        "tch": 10.8,
         "rz": 0.1,
         "shr": 0.1,
-        "car": 8.1,
-        "rush": 34.1,
+        "car": 8.4,
+        "rush": 35.6,
         "pas": 0.0,
-        "pts": 7.4
+        "pts": 7.8
       },
       "z": {
-        "tgt": 1.44,
-        "tch": 1.41,
-        "rz": 0.03,
-        "shr": 1.74,
-        "car": 1.29,
-        "rush": 1.24,
+        "tgt": 1.52,
+        "tch": 1.51,
+        "rz": 0.07,
+        "shr": 1.84,
+        "car": 1.39,
+        "rush": 1.33,
         "pas": -0.09,
-        "pts": 1.19
+        "pts": 1.28
       },
       "comps": [
         {
@@ -10440,13 +10440,13 @@
           "pos": "RB"
         },
         {
-          "name": "Rhamondre Stevenson",
-          "team": "NE",
+          "name": "Tyrone Tracy Jr.",
+          "team": "NYG",
           "pos": "RB"
         },
         {
-          "name": "Tyrone Tracy Jr.",
-          "team": "NYG",
+          "name": "Rhamondre Stevenson",
+          "team": "NE",
           "pos": "RB"
         },
         {
@@ -11468,7 +11468,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -11491,7 +11491,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -11839,7 +11839,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -11862,7 +11862,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -12528,7 +12528,7 @@
       "pos": "WR",
       "team": "TEN",
       "season": 2021,
-      "z_opp": 0.21,
+      "z_opp": 0.22,
       "gap": 0.11,
       "flag": "buy",
       "snap": 0.371,
@@ -12547,7 +12547,7 @@
         "tgt": 0.35,
         "tch": 0.39,
         "rz": -0.09,
-        "shr": 0.38,
+        "shr": 0.39,
         "car": -0.01,
         "rush": 0.11,
         "pas": -0.13,
@@ -12793,35 +12793,40 @@
       "pos": "RB",
       "team": "LV",
       "season": 2021,
-      "z_opp": 0.17,
-      "gap": 0.25,
+      "z_opp": 0.1,
+      "gap": 0.19,
       "flag": "buy",
-      "snap": 0.096,
+      "snap": 0.084,
       "ay": 0.002,
       "m": {
         "tgt": 0.8,
-        "tch": 3.8,
+        "tch": 3.2,
         "rz": 0.2,
         "shr": 0.0,
-        "car": 3.2,
-        "rush": 12.5,
+        "car": 2.6,
+        "rush": 11.2,
         "pas": 0.0,
-        "pts": 2.5
+        "pts": 2.4
       },
       "z": {
-        "tgt": -0.06,
-        "tch": 0.08,
-        "rz": 0.33,
-        "shr": -0.13,
-        "car": 0.11,
-        "rush": 0.04,
+        "tgt": -0.02,
+        "tch": -0.04,
+        "rz": 0.38,
+        "shr": -0.09,
+        "car": -0.04,
+        "rush": -0.03,
         "pas": -0.09,
-        "pts": -0.08
+        "pts": -0.09
       },
       "comps": [
         {
           "name": "Justin Jackson",
           "team": "DET",
+          "pos": "RB"
+        },
+        {
+          "name": "Elijhaa Penny",
+          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -12832,11 +12837,6 @@
         {
           "name": "Zavier Scott",
           "team": "MIN",
-          "pos": "RB"
-        },
-        {
-          "name": "Elijhaa Penny",
-          "team": "NYG",
           "pos": "RB"
         }
       ]
@@ -12899,7 +12899,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -12922,7 +12922,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -13111,27 +13111,27 @@
       "pos": "RB",
       "team": "NYG",
       "season": 2021,
-      "z_opp": -0.21,
+      "z_opp": -0.2,
       "gap": -0.1,
       "flag": null,
-      "snap": 0.114,
+      "snap": 0.118,
       "ay": null,
       "m": {
-        "tgt": 0.6,
+        "tgt": 0.7,
         "tch": 1.9,
         "rz": 0.1,
         "shr": 0.0,
         "car": 1.4,
-        "rush": 5.8,
+        "rush": 5.9,
         "pas": 0.0,
         "pts": 2.4
       },
       "z": {
-        "tgt": -0.16,
+        "tgt": -0.13,
         "tch": -0.31,
-        "rz": 0.03,
-        "shr": -0.16,
-        "car": -0.34,
+        "rz": 0.07,
+        "shr": -0.12,
+        "car": -0.35,
         "rush": -0.33,
         "pas": -0.09,
         "pts": -0.1
@@ -13148,13 +13148,13 @@
           "pos": "RB"
         },
         {
-          "name": "Hunter Luepke",
-          "team": "DAL",
+          "name": "Andrew Beck",
+          "team": "NYJ",
           "pos": "RB"
         },
         {
-          "name": "James Conner",
-          "team": "ARI",
+          "name": "Hunter Luepke",
+          "team": "DAL",
           "pos": "RB"
         }
       ]
@@ -13482,30 +13482,30 @@
       "pos": "RB",
       "team": "LV",
       "season": 2021,
-      "z_opp": -0.35,
+      "z_opp": -0.33,
       "gap": 0.16,
       "flag": "buy",
-      "snap": 0.081,
+      "snap": 0.086,
       "ay": 0.005,
       "m": {
-        "tgt": 0.7,
-        "tch": 1.0,
+        "tgt": 0.8,
+        "tch": 1.1,
         "rz": 0.1,
         "shr": 0.0,
         "car": 0.4,
-        "rush": 0.9,
+        "rush": 1.0,
         "pas": 0.0,
         "pts": 0.8
       },
       "z": {
-        "tgt": -0.11,
-        "tch": -0.5,
-        "rz": 0.03,
-        "shr": -0.11,
+        "tgt": -0.08,
+        "tch": -0.49,
+        "rz": 0.07,
+        "shr": -0.07,
         "car": -0.58,
-        "rush": -0.61,
+        "rush": -0.6,
         "pas": -0.09,
-        "pts": -0.51
+        "pts": -0.5
       },
       "comps": [
         {
@@ -13519,13 +13519,13 @@
           "pos": "RB"
         },
         {
-          "name": "Derek Watt",
-          "team": "PIT",
+          "name": "Elijhaa Penny",
+          "team": "NYG",
           "pos": "RB"
         },
         {
-          "name": "Elijhaa Penny",
-          "team": "NYG",
+          "name": "Derek Watt",
+          "team": "PIT",
           "pos": "RB"
         }
       ]
@@ -14277,7 +14277,7 @@
       "pos": "RB",
       "team": "KC",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -14300,7 +14300,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -14637,8 +14637,8 @@
           "pos": "RB"
         },
         {
-          "name": "LeQuint Allen Jr.",
-          "team": "JAX",
+          "name": "Kalen Ballage",
+          "team": "PIT",
           "pos": "RB"
         }
       ]
@@ -14754,7 +14754,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -14777,7 +14777,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -14844,13 +14844,13 @@
           "pos": "RB"
         },
         {
-          "name": "Leonard Fournette",
-          "team": "BUF",
+          "name": "Buddy Howell",
+          "team": "LA",
           "pos": "RB"
         },
         {
-          "name": "Buddy Howell",
-          "team": "LA",
+          "name": "Leonard Fournette",
+          "team": "BUF",
           "pos": "RB"
         }
       ]
@@ -15444,7 +15444,7 @@
       "team": "MIA",
       "season": 2021,
       "z_opp": -0.21,
-      "gap": -0.13,
+      "gap": -0.14,
       "flag": null,
       "snap": 0.114,
       "ay": 0.035,
@@ -15462,7 +15462,7 @@
         "tgt": -0.26,
         "tch": -0.23,
         "rz": -0.09,
-        "shr": -0.27,
+        "shr": -0.28,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -15602,7 +15602,7 @@
       "pos": "RB",
       "team": "SF",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.05,
       "flag": null,
       "snap": null,
@@ -15615,7 +15615,7 @@
         "car": 0.0,
         "rush": 0.0,
         "pas": 0.0,
-        "pts": 0.0
+        "pts": 0.1
       },
       "z": {
         "tgt": -0.72,
@@ -15644,8 +15644,8 @@
           "pos": "RB"
         },
         {
-          "name": "Devine Ozigbo",
-          "team": "NE",
+          "name": "Jordan Mims",
+          "team": "TEN",
           "pos": "RB"
         }
       ]
@@ -15952,8 +15952,8 @@
           "pos": "RB"
         },
         {
-          "name": "Devin Neal",
-          "team": "NO",
+          "name": "Carlos Hyde",
+          "team": "JAX",
           "pos": "RB"
         },
         {
@@ -15962,8 +15962,8 @@
           "pos": "RB"
         },
         {
-          "name": "Carlos Hyde",
-          "team": "JAX",
+          "name": "Devin Neal",
+          "team": "NO",
           "pos": "RB"
         }
       ]
@@ -16927,7 +16927,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -16950,7 +16950,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -17934,7 +17934,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -17957,7 +17957,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -18676,8 +18676,8 @@
       "pos": "TE",
       "team": "DAL",
       "season": 2021,
-      "z_opp": 0.03,
-      "gap": -0.01,
+      "z_opp": 0.04,
+      "gap": -0.0,
       "flag": null,
       "snap": 0.207,
       "ay": 0.031,
@@ -18695,7 +18695,7 @@
         "tgt": -0.09,
         "tch": -0.11,
         "rz": 0.24,
-        "shr": -0.06,
+        "shr": -0.03,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -19577,7 +19577,7 @@
       "pos": "RB",
       "team": "DAL",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -19600,7 +19600,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -20126,7 +20126,7 @@
         "tgt": -0.37,
         "tch": -0.42,
         "rz": -0.39,
-        "shr": -0.41,
+        "shr": -0.42,
         "car": -0.21,
         "rush": -0.16,
         "pas": 0.0,
@@ -20409,13 +20409,13 @@
           "pos": "RB"
         },
         {
-          "name": "Ray Davis",
-          "team": "BUF",
+          "name": "Elijhaa Penny",
+          "team": "NYG",
           "pos": "RB"
         },
         {
-          "name": "Elijhaa Penny",
-          "team": "NYG",
+          "name": "Ray Davis",
+          "team": "BUF",
           "pos": "RB"
         }
       ]
@@ -20531,7 +20531,7 @@
       "pos": "RB",
       "team": "PHI",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -20554,7 +20554,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -22969,30 +22969,30 @@
       "pos": "RB",
       "team": "PIT",
       "season": 2021,
-      "z_opp": -0.45,
+      "z_opp": -0.44,
       "gap": 0.16,
       "flag": "buy",
-      "snap": 0.049,
+      "snap": 0.053,
       "ay": null,
       "m": {
         "tgt": 0.4,
         "tch": 0.8,
         "rz": 0.1,
         "shr": 0.0,
-        "car": 0.6,
-        "rush": 2.1,
+        "car": 0.7,
+        "rush": 2.2,
         "pas": 0.0,
         "pts": 0.4
       },
       "z": {
-        "tgt": -0.36,
-        "tch": -0.55,
-        "rz": -0.27,
-        "shr": -0.41,
-        "car": -0.53,
-        "rush": -0.54,
+        "tgt": -0.34,
+        "tch": -0.54,
+        "rz": -0.25,
+        "shr": -0.39,
+        "car": -0.52,
+        "rush": -0.53,
         "pas": -0.09,
-        "pts": -0.61
+        "pts": -0.6
       },
       "comps": [
         {
@@ -23001,13 +23001,13 @@
           "pos": "RB"
         },
         {
-          "name": "Mike Davis",
-          "team": "FA",
+          "name": "Darrel Williams",
+          "team": "ARI",
           "pos": "RB"
         },
         {
-          "name": "Darrel Williams",
-          "team": "ARI",
+          "name": "Mike Davis",
+          "team": "FA",
           "pos": "RB"
         },
         {
@@ -23372,13 +23372,13 @@
           "pos": "RB"
         },
         {
-          "name": "Cullen Gillaspia",
-          "team": "NYG",
+          "name": "Robbie Ouzts",
+          "team": "SEA",
           "pos": "RB"
         },
         {
-          "name": "Robbie Ouzts",
-          "team": "SEA",
+          "name": "Cullen Gillaspia",
+          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -25301,7 +25301,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -25324,7 +25324,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -25514,9 +25514,9 @@
       "team": "LA",
       "season": 2021,
       "z_opp": -0.61,
-      "gap": 0.04,
+      "gap": 0.03,
       "flag": null,
-      "snap": 0.005,
+      "snap": 0.006,
       "ay": null,
       "m": {
         "tgt": 0.0,
@@ -25524,7 +25524,7 @@
         "rz": 0.0,
         "shr": 0.0,
         "car": 0.3,
-        "rush": 0.6,
+        "rush": 0.7,
         "pas": 0.0,
         "pts": 0.3
       },
@@ -25536,12 +25536,12 @@
         "car": -0.61,
         "rush": -0.62,
         "pas": -0.09,
-        "pts": -0.65
+        "pts": -0.64
       },
       "comps": [
         {
-          "name": "Kalel Mullings",
-          "team": "TEN",
+          "name": "Leonard Fournette",
+          "team": "BUF",
           "pos": "RB"
         },
         {
@@ -25550,13 +25550,13 @@
           "pos": "RB"
         },
         {
-          "name": "Leonard Fournette",
-          "team": "BUF",
+          "name": "Kalel Mullings",
+          "team": "TEN",
           "pos": "RB"
         },
         {
-          "name": "Josh Williams",
-          "team": "TB",
+          "name": "Craig Reynolds",
+          "team": "NE",
           "pos": "RB"
         }
       ]
@@ -25797,7 +25797,7 @@
         "tgt": -0.46,
         "tch": -0.51,
         "rz": -0.26,
-        "shr": -0.46,
+        "shr": -0.45,
         "car": -0.31,
         "rush": -0.29,
         "pas": -0.13,
@@ -25873,8 +25873,8 @@
           "pos": "RB"
         },
         {
-          "name": "Latavius Murray",
-          "team": "BUF",
+          "name": "Peyton Barber",
+          "team": "LV",
           "pos": "RB"
         }
       ]
@@ -26658,13 +26658,13 @@
           "pos": "RB"
         },
         {
-          "name": "Wendell Smallwood",
-          "team": "WAS",
+          "name": "Rodney Smith",
+          "team": "FA",
           "pos": "RB"
         },
         {
-          "name": "Rodney Smith",
-          "team": "FA",
+          "name": "Wendell Smallwood",
+          "team": "WAS",
           "pos": "RB"
         },
         {
@@ -27580,8 +27580,8 @@
       "pos": "RB",
       "team": "NE",
       "season": 2021,
-      "z_opp": -0.65,
-      "gap": 0.05,
+      "z_opp": -0.66,
+      "gap": 0.04,
       "flag": null,
       "snap": 0.011,
       "ay": 0.001,
@@ -28508,13 +28508,13 @@
       },
       "comps": [
         {
-          "name": "Jalen Richard",
-          "team": "LV",
+          "name": "Derek Watt",
+          "team": "PIT",
           "pos": "RB"
         },
         {
-          "name": "Derek Watt",
-          "team": "PIT",
+          "name": "Jalen Richard",
+          "team": "LV",
           "pos": "RB"
         },
         {
@@ -28977,7 +28977,7 @@
         "tgt": 1.5,
         "tch": -0.56,
         "rz": -0.18,
-        "shr": 1.24,
+        "shr": 1.22,
         "car": -0.6,
         "rush": -0.49,
         "pas": -0.65,
@@ -30018,7 +30018,7 @@
       "pos": "RB",
       "team": "MIA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -30041,7 +30041,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -30813,7 +30813,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -30836,7 +30836,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -31794,6 +31794,11 @@
       },
       "comps": [
         {
+          "name": "Cullen Gillaspia",
+          "team": "NYG",
+          "pos": "RB"
+        },
+        {
           "name": "Robbie Ouzts",
           "team": "SEA",
           "pos": "RB"
@@ -31801,11 +31806,6 @@
         {
           "name": "Taiwan Jones",
           "team": "BUF",
-          "pos": "RB"
-        },
-        {
-          "name": "Cullen Gillaspia",
-          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -31820,7 +31820,7 @@
       "pos": "RB",
       "team": "BUF",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -31843,7 +31843,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -31926,7 +31926,7 @@
       "pos": "RB",
       "team": "NYG",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.01,
       "flag": null,
       "snap": 0.004,
@@ -31949,17 +31949,17 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.67
+        "pts": -0.66
       },
       "comps": [
         {
-          "name": "Taiwan Jones",
-          "team": "BUF",
+          "name": "Robbie Ouzts",
+          "team": "SEA",
           "pos": "RB"
         },
         {
-          "name": "Robbie Ouzts",
-          "team": "SEA",
+          "name": "Taiwan Jones",
+          "team": "BUF",
           "pos": "RB"
         },
         {
@@ -33781,7 +33781,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -33804,7 +33804,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -34364,7 +34364,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -34387,7 +34387,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -35160,9 +35160,9 @@
       "team": "FA",
       "season": 2021,
       "z_opp": -0.63,
-      "gap": -0.04,
+      "gap": -0.05,
       "flag": null,
-      "snap": 0.031,
+      "snap": 0.033,
       "ay": 0.003,
       "m": {
         "tgt": 0.3,
@@ -35175,19 +35175,19 @@
         "pts": 0.5
       },
       "z": {
-        "tgt": -0.46,
+        "tgt": -0.45,
         "tch": -0.65,
         "rz": -0.57,
-        "shr": -0.13,
+        "shr": -0.1,
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.59
+        "pts": -0.58
       },
       "comps": [
         {
-          "name": "Damien Williams",
-          "team": "FA",
+          "name": "Alec Ingold",
+          "team": "MIA",
           "pos": "RB"
         },
         {
@@ -35196,8 +35196,8 @@
           "pos": "RB"
         },
         {
-          "name": "Alec Ingold",
-          "team": "MIA",
+          "name": "Damien Williams",
+          "team": "FA",
           "pos": "RB"
         },
         {
@@ -35742,7 +35742,7 @@
       "pos": "RB",
       "team": "CLE",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -35765,7 +35765,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -36113,7 +36113,7 @@
       "pos": "RB",
       "team": "DAL",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -36136,7 +36136,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -36219,7 +36219,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -36242,7 +36242,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -37176,7 +37176,7 @@
       "z_opp": -0.59,
       "gap": 0.07,
       "flag": "buy",
-      "snap": 0.018,
+      "snap": 0.019,
       "ay": 0.0,
       "m": {
         "tgt": 0.2,
@@ -37189,14 +37189,14 @@
         "pts": 0.2
       },
       "z": {
-        "tgt": -0.57,
+        "tgt": -0.56,
         "tch": -0.61,
         "rz": -0.57,
-        "shr": -0.6,
-        "car": -0.6,
-        "rush": -0.62,
+        "shr": -0.59,
+        "car": -0.59,
+        "rush": -0.61,
         "pas": -0.09,
-        "pts": -0.67
+        "pts": -0.66
       },
       "comps": [
         {
@@ -37215,7 +37215,7 @@
           "pos": "RB"
         },
         {
-          "name": "Trey Ragas",
+          "name": "Dylan Laube",
           "team": "LV",
           "pos": "RB"
         }
@@ -37756,7 +37756,7 @@
       "pos": "RB",
       "team": "ARI",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -37779,7 +37779,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -38159,13 +38159,13 @@
           "pos": "RB"
         },
         {
-          "name": "Scottie Phillips",
-          "team": "HOU",
+          "name": "Phil Mafah",
+          "team": "DAL",
           "pos": "RB"
         },
         {
-          "name": "Phil Mafah",
-          "team": "DAL",
+          "name": "Scottie Phillips",
+          "team": "HOU",
           "pos": "RB"
         },
         {
@@ -38869,8 +38869,8 @@
       "pos": "WR",
       "team": "FA",
       "season": 2021,
-      "z_opp": 0.98,
-      "gap": 0.45,
+      "z_opp": 0.96,
+      "gap": 0.43,
       "flag": "buy",
       "snap": 0.289,
       "ay": 0.105,
@@ -38888,7 +38888,7 @@
         "tgt": 0.22,
         "tch": 0.32,
         "rz": -0.43,
-        "shr": 3.14,
+        "shr": 3.08,
         "car": 0.58,
         "rush": 0.42,
         "pas": -0.13,
@@ -40565,7 +40565,7 @@
       "pos": "RB",
       "team": "DEN",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -40588,7 +40588,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -41943,7 +41943,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -41966,7 +41966,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -42033,13 +42033,13 @@
           "pos": "RB"
         },
         {
-          "name": "Buddy Howell",
-          "team": "LA",
+          "name": "Craig Reynolds",
+          "team": "NE",
           "pos": "RB"
         },
         {
-          "name": "Craig Reynolds",
-          "team": "NE",
+          "name": "Buddy Howell",
+          "team": "LA",
           "pos": "RB"
         }
       ]
@@ -43480,7 +43480,7 @@
       "pos": "RB",
       "team": "CLE",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": 0.003,
@@ -43503,7 +43503,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -43904,7 +43904,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -43927,7 +43927,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -44116,7 +44116,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -44139,7 +44139,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -44222,7 +44222,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -44245,7 +44245,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -44752,7 +44752,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -44775,7 +44775,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -44808,7 +44808,7 @@
       "z_opp": -0.64,
       "gap": 0.04,
       "flag": null,
-      "snap": 0.008,
+      "snap": 0.009,
       "ay": null,
       "m": {
         "tgt": 0.1,
@@ -44816,19 +44816,19 @@
         "rz": 0.0,
         "shr": 0.0,
         "car": 0.1,
-        "rush": 0.5,
+        "rush": 0.6,
         "pas": 0.0,
-        "pts": 0.1
+        "pts": 0.2
       },
       "z": {
-        "tgt": -0.62,
+        "tgt": -0.61,
         "tch": -0.67,
         "rz": -0.57,
         "shr": -0.65,
         "car": -0.67,
         "rush": -0.63,
         "pas": -0.09,
-        "pts": -0.68
+        "pts": -0.67
       },
       "comps": [
         {
@@ -44842,13 +44842,13 @@
           "pos": "RB"
         },
         {
-          "name": "Amar Johnson",
-          "team": "LAC",
+          "name": "Kenyan Drake",
+          "team": "GB",
           "pos": "RB"
         },
         {
-          "name": "Kenyan Drake",
-          "team": "GB",
+          "name": "Amar Johnson",
+          "team": "LAC",
           "pos": "RB"
         }
       ]
@@ -45176,7 +45176,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -45199,7 +45199,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -48446,13 +48446,13 @@
           "pos": "RB"
         },
         {
-          "name": "Devontae Booker",
-          "team": "NYG",
+          "name": "Chuba Hubbard",
+          "team": "CAR",
           "pos": "RB"
         },
         {
-          "name": "Chuba Hubbard",
-          "team": "CAR",
+          "name": "Devontae Booker",
+          "team": "NYG",
           "pos": "RB"
         }
       ]
@@ -50264,7 +50264,7 @@
       "pos": "RB",
       "team": "LA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -50287,7 +50287,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -51165,7 +51165,7 @@
       "pos": "RB",
       "team": "FA",
       "season": 2021,
-      "z_opp": -0.65,
+      "z_opp": -0.66,
       "gap": 0.06,
       "flag": null,
       "snap": null,
@@ -51188,7 +51188,7 @@
         "car": -0.68,
         "rush": -0.66,
         "pas": -0.09,
-        "pts": -0.72
+        "pts": -0.71
       },
       "comps": [
         {
@@ -58612,13 +58612,13 @@
       },
       "comps": [
         {
-          "name": "Devontae Booker",
-          "team": "NYG",
+          "name": "Rhamondre Stevenson",
+          "team": "NE",
           "pos": "RB"
         },
         {
-          "name": "Rhamondre Stevenson",
-          "team": "NE",
+          "name": "Devontae Booker",
+          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -60424,13 +60424,13 @@
           "pos": "TE"
         },
         {
-          "name": "Daniel Brown",
-          "team": "NYJ",
+          "name": "Derek Carrier",
+          "team": "LV",
           "pos": "TE"
         },
         {
-          "name": "Derek Carrier",
-          "team": "LV",
+          "name": "Daniel Brown",
+          "team": "NYJ",
           "pos": "TE"
         }
       ]
@@ -75837,11 +75837,6 @@
       },
       "comps": [
         {
-          "name": "Peyton Barber",
-          "team": "LV",
-          "pos": "RB"
-        },
-        {
           "name": "Zavier Scott",
           "team": "MIN",
           "pos": "RB"
@@ -75854,6 +75849,11 @@
         {
           "name": "Bhayshul Tuten",
           "team": "JAX",
+          "pos": "RB"
+        },
+        {
+          "name": "Peyton Barber",
+          "team": "LV",
           "pos": "RB"
         }
       ]
@@ -76430,13 +76430,13 @@
           "pos": "RB"
         },
         {
-          "name": "Jaleel McLaughlin",
-          "team": "DEN",
+          "name": "Le'Veon Bell",
+          "team": "TB",
           "pos": "RB"
         },
         {
-          "name": "Raheem Mostert",
-          "team": "LV",
+          "name": "Jaleel McLaughlin",
+          "team": "DEN",
           "pos": "RB"
         }
       ]
@@ -77533,13 +77533,13 @@
       },
       "comps": [
         {
-          "name": "Tyler Goodson",
-          "team": "IND",
+          "name": "Scottie Phillips",
+          "team": "HOU",
           "pos": "RB"
         },
         {
-          "name": "Scottie Phillips",
-          "team": "HOU",
+          "name": "Tyler Goodson",
+          "team": "IND",
           "pos": "RB"
         },
         {
@@ -90942,11 +90942,6 @@
       },
       "comps": [
         {
-          "name": "Scottie Phillips",
-          "team": "HOU",
-          "pos": "RB"
-        },
-        {
           "name": "Clyde Edwards-Helaire",
           "team": "KC",
           "pos": "RB"
@@ -90954,6 +90949,11 @@
         {
           "name": "Patrick Ricard",
           "team": "BAL",
+          "pos": "RB"
+        },
+        {
+          "name": "Scottie Phillips",
+          "team": "HOU",
           "pos": "RB"
         },
         {
@@ -91169,8 +91169,8 @@
           "pos": "RB"
         },
         {
-          "name": "TreVeyon Henderson",
-          "team": "NE",
+          "name": "Devontae Booker",
+          "team": "NYG",
           "pos": "RB"
         }
       ]
@@ -91959,13 +91959,13 @@
           "pos": "RB"
         },
         {
-          "name": "Trey Ragas",
-          "team": "LV",
+          "name": "Alex Armah",
+          "team": "WAS",
           "pos": "RB"
         },
         {
-          "name": "Alex Armah",
-          "team": "WAS",
+          "name": "Trey Ragas",
+          "team": "LV",
           "pos": "RB"
         }
       ]
@@ -94079,13 +94079,13 @@
           "pos": "RB"
         },
         {
-          "name": "Latavius Murray",
-          "team": "BUF",
+          "name": "Carlos Hyde",
+          "team": "JAX",
           "pos": "RB"
         },
         {
-          "name": "Carlos Hyde",
-          "team": "JAX",
+          "name": "Latavius Murray",
+          "team": "BUF",
           "pos": "RB"
         }
       ]
@@ -96676,13 +96676,13 @@
           "pos": "RB"
         },
         {
-          "name": "D'Andre Swift",
-          "team": "CHI",
+          "name": "Devontae Booker",
+          "team": "NYG",
           "pos": "RB"
         },
         {
-          "name": "Devontae Booker",
-          "team": "NYG",
+          "name": "D'Andre Swift",
+          "team": "CHI",
           "pos": "RB"
         }
       ]
@@ -100429,13 +100429,13 @@
       },
       "comps": [
         {
-          "name": "Cullen Gillaspia",
-          "team": "NYG",
+          "name": "Taiwan Jones",
+          "team": "BUF",
           "pos": "RB"
         },
         {
-          "name": "Taiwan Jones",
-          "team": "BUF",
+          "name": "Cullen Gillaspia",
+          "team": "NYG",
           "pos": "RB"
         },
         {
@@ -100545,13 +100545,13 @@
           "pos": "RB"
         },
         {
-          "name": "Buddy Howell",
-          "team": "LA",
+          "name": "David Johnson",
+          "team": "NO",
           "pos": "RB"
         },
         {
-          "name": "David Johnson",
-          "team": "NO",
+          "name": "Buddy Howell",
+          "team": "LA",
           "pos": "RB"
         }
       ]
