@@ -25,7 +25,7 @@
     },
     "trade_solve_selftest": {
       "spearman": 0.9980832002222375,
-      "median_abs_pct_err": 4.5463761450163025,
+      "median_abs_pct_err": 4.54637614501628,
       "n_solved": 120
     },
     "age_curves": {
